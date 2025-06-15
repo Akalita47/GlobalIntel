@@ -1,0 +1,1164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>GlobalIntelDesk Travel Planning Platform</title>
+<link href="https://fonts.googleapis.com/css2?family=Material+Icons" rel="stylesheet" />
+<style>
+  /* Reset & base */
+  *, *::before, *::after {
+    box-sizing: border-box;
+  }
+  html {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
+      Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    font-size: 16px;
+    scroll-behavior: smooth;
+  }
+  body {
+    margin: 0;
+    background: #101820ff; /* Dark professional background */
+    color: #f0f0f0;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+  }
+  a {
+    color: #f0f0f0;
+    text-decoration: none;
+  }
+  a:hover,
+  a:focus {
+    text-decoration: underline;
+  }
+
+  /* Layout grid container */
+  #app {
+    display: grid;
+    grid-template-columns: 300px 1fr 320px;
+    grid-template-rows: 60px 1fr 40px;
+    grid-template-areas:
+      "header header header"
+      "sidebar main rightpanel"
+      "footer footer footer";
+    height: 100vh;
+  }
+
+  /* Responsive adjustments */
+  @media (max-width: 1024px) {
+    #app {
+      grid-template-columns: 300px 1fr;
+      grid-template-areas:
+        "header header"
+        "sidebar main"
+        "sidebar rightpanel"
+        "footer footer";
+      grid-template-rows: 60px 1fr 300px 40px;
+    }
+    #right-panel {
+      border-top: 1px solid #222;
+    }
+  }
+  @media (max-width: 640px) {
+    #app {
+      grid-template-columns: 1fr;
+      grid-template-areas:
+        "header"
+        "main"
+        "rightpanel"
+        "sidebar"
+        "footer";
+      grid-template-rows: 60px 1fr 320px 300px 40px;
+    }
+    #sidebar {
+      border-top: 1px solid #222;
+      order: 4;
+    }
+    #right-panel {
+      order: 3;
+      border-top: 1px solid #222;
+    }
+  }
+
+  /* Header */
+  header {
+    grid-area: header;
+    background: #16213e;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 20px;
+    border-bottom: 1px solid #1f4068;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  header h1 {
+    margin: 0;
+    font-weight: 700;
+    font-size: 1.5rem;
+    color: #db2777; /* Pink gradient vibe */
+  }
+
+  /* Search box */
+  .search-container {
+    position: relative;
+    flex: 1;
+    max-width: 300px;
+    margin: 0 20px;
+  }
+  .search-container input {
+    width: 100%;
+    padding: 8px 36px 8px 12px;
+    border-radius: 8px;
+    border: none;
+    font-size: 1rem;
+    color: #101820ff;
+    outline-offset: 2px;
+  }
+  .search-container .material-icons {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #db2777;
+    font-size: 24px;
+    pointer-events: none;
+  }
+  .autocomplete-list {
+    position: absolute;
+    top: 100%;
+    width: 100%;
+    background: #222a58;
+    border-radius: 0 0 8px 8px;
+    max-height: 150px;
+    overflow-y: auto;
+    z-index: 100;
+  }
+  .autocomplete-list div {
+    padding: 8px 12px;
+    cursor: pointer;
+  }
+  .autocomplete-list div:hover,
+  .autocomplete-list div.active {
+    background: #db2777;
+    color: #fff;
+  }
+
+  /* Profile */
+  .profile {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .profile .material-icons {
+    font-size: 36px;
+    color: #db2777;
+  }
+  .profile-info {
+    text-align: right;
+    font-size: 0.9rem;
+  }
+  .profile-info strong {
+    display: block;
+    font-weight: 700;
+    color: #db2777;
+  }
+
+  /* Sidebar */
+  #sidebar {
+    grid-area: sidebar;
+    background: #1f4068;
+    border-right: 1px solid #16213e;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    overflow-y: auto;
+  }
+  #sidebar h2 {
+    font-size: 1.2rem;
+    font-weight: 700;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #db2777;
+    margin-bottom: 12px;
+    color: #db2777;
+  }
+  .trip-list, .saved-destinations, .travel-guides {
+    flex: 1;
+    overflow-y: auto;
+  }
+  .trip-item,
+  .destination-item,
+  .guide-item {
+    background: #16213e;
+    margin-bottom: 12px;
+    padding: 12px 16px;
+    border-radius: 12px;
+    cursor: pointer;
+    outline-offset: 2px;
+  }
+  .trip-item.selected,
+  .destination-item.selected {
+    background: #db2777;
+    color: white;
+  }
+  .trip-item:hover,
+  .destination-item:hover,
+  .guide-item:hover {
+    background: #ea489a;
+    color: white;
+  }
+
+  /* Main area */
+  #main {
+    grid-area: main;
+    background: #0f172a;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    padding: 16px 24px;
+    gap: 20px;
+  }
+
+  /* Map container */
+  #map {
+    width: 100%;
+    height: 400px;
+    border-radius: 16px;
+    box-shadow: 0 0 20px #db2777aa;
+  }
+
+  /* Itinerary */
+  .itinerary {
+    background: #16213e;
+    padding: 16px;
+    border-radius: 16px;
+    max-height: 300px;
+    overflow-y: auto;
+  }
+  .itinerary h3 {
+    margin-top: 0;
+    color: #db2777;
+  }
+  .day-plan {
+    background: #1f4068;
+    border-radius: 12px;
+    padding: 8px 12px;
+    margin-bottom: 12px;
+  }
+  .day-plan h4 {
+    margin: 0 0 6px;
+    font-weight: 700;
+    font-size: 1.1rem;
+    color: #ea489a;
+  }
+  .activity-list {
+    list-style: none;
+    margin: 0;
+    padding-left: 0;
+  }
+  .activity-list li {
+    background: #0f172a;
+    padding: 6px 10px;
+    border-radius: 8px;
+    margin-bottom: 6px;
+    cursor: grab;
+    user-select: none;
+    border: 1px solid #db2777;
+    color: white;
+    font-size: 0.9rem;
+  }
+
+  /* Right panel */
+  #right-panel {
+    grid-area: rightpanel;
+    background: #1f4068;
+    padding: 20px;
+    border-left: 1px solid #16213e;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    overflow-y: auto;
+  }
+  #right-panel h2 {
+    margin-top: 0;
+    font-weight: 700;
+    color: #db2777;
+  }
+  .summary, .weather, .recommendations {
+    background: #16213e;
+    border-radius: 16px;
+    padding: 16px;
+  }
+  .summary p, .weather p, .recommendations p {
+    margin-top: 0;
+    margin-bottom: 6px;
+    font-size: 0.9rem;
+  }
+
+  /* Buttons and forms */
+  button, input[type="submit"] {
+    background: #db2777;
+    border: none;
+    padding: 10px 20px;
+    color: white;
+    font-weight: 700;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+  }
+  button:hover, input[type="submit"]:hover {
+    background: #ea489a;
+  }
+  button:disabled {
+    background: #9d7a87;
+    cursor: not-allowed;
+  }
+  input, select {
+    padding: 8px 12px;
+    border-radius: 12px;
+    border: none;
+    margin-bottom: 12px;
+    width: 100%;
+    font-size: 1rem;
+  }
+  label {
+    font-weight: 600;
+    display: block;
+    margin-bottom: 4px;
+  }
+  fieldset {
+    border: none;
+    padding: 0;
+    margin-bottom: 20px;
+  }
+  legend {
+    font-weight: 700;
+    color: #db2777;
+    margin-bottom: 8px;
+  }
+
+  /* Floating action button */
+  .fab {
+    position: fixed;
+    bottom: 40px;
+    right: 40px;
+    background: #db2777;
+    color: white;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    text-align: center;
+    line-height: 56px;
+    font-size: 36px;
+    box-shadow: 0 4px 12px #ea489aaa;
+    cursor: pointer;
+    z-index: 200;
+    transition: background-color 0.3s ease;
+  }
+  .fab:hover {
+    background: #ea489a;
+  }
+
+  /* Scrollbar for dark backgrounds */
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #101820ff;
+  }
+  ::-webkit-scrollbar-thumb {
+    background-color: #db2777;
+    border-radius: 10px;
+  }
+
+  /* Leaflet map base styles */
+  .leaflet-popup-content-wrapper {
+    background: #1f4068;
+    color: #fff;
+    border-radius: 12px;
+  }
+  .leaflet-popup-tip {
+    background: #1f4068;
+  }
+</style>
+
+<link
+  rel="stylesheet"
+  href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+  integrity="sha256-sA+e2r1bEDFZ2NiYm9E+VLF+P8C/QN7xjdZU9tu87eA="
+  crossorigin=""
+/>
+
+</head>
+<body>
+<div id="app" role="main" aria-label="  GlobalIntelDesk Travel planning ">
+
+  <!-- Header -->
+  <header>
+    <h1>GlobalIntelDesk Travel Planner</h1>
+
+    <div class="search-container" role="search" aria-label="Search destinations">
+      <input
+        id="destination-search"
+        type="search"
+        placeholder="Search Destinations..."
+        aria-autocomplete="list"
+        aria-controls="autocomplete-list"
+        aria-haspopup="listbox"
+        aria-expanded="false"
+        aria-activedescendant=""
+        autocomplete="off"
+        spellcheck="false"
+        aria-describedby="search-desc"
+        />
+      <span class="material-icons" aria-hidden="true">search</span>
+      <div id="autocomplete-list" class="autocomplete-list" role="listbox" hidden></div>
+      <span id="search-desc" class="sr-only">Type a destination name to see suggestions</span>
+    </div>
+
+    <div class="profile" tabindex="0" aria-label="User profile and travel stats">
+      <span class="material-icons" aria-hidden="true" title="User Profile">account_circle</span>
+      <div class="profile-info">
+        <strong>Agent Smith</strong>
+        <small>Trips: 3 | Missions: 12</small>
+      </div>
+    </div>
+  </header>
+
+  <!-- Sidebar -->
+  <aside id="sidebar" aria-label="Trip navigation, saved destinations, travel guides">
+    <section class="trip-list" aria-label="Your trips and mission plans">
+      <h2>Your Trips</h2>
+      <div id="trips-container" tabindex="0" role="list"></div>
+      <button id="btn-new-trip" aria-label="Create new trip" title="Create New Trip">New Trip</button>
+    </section>
+
+    <section class="saved-destinations" aria-label="Saved destinations">
+      <h2>Saved Destinations</h2>
+      <div id="saved-destinations-container" tabindex="0" role="list"></div>
+    </section>
+
+    <section class="travel-guides" aria-label="Travel guides and bulletins">
+      <h2>Travel Guides</h2>
+      <div id="travel-guides-container" tabindex="0" role="list"></div>
+    </section>
+  </aside>
+
+  <!-- Main content -->
+  <main id="main">
+    <section id="map" aria-label="Interactive map with destination markers and OSINT news"></section>
+
+    <section class="itinerary" aria-label="Trip itinerary and daily activities">
+      <h3>Itinerary</h3>
+      <div id="itinerary-container" tabindex="0"></div>
+    </section>
+  </main>
+
+  <!-- Right panel -->
+  <aside id="right-panel" aria-label="Trip summary, weather forecast, and recommendations">
+    <section class="summary" aria-label="Trip summary">
+      <h2>Trip Summary</h2>
+      <p><strong>Name:</strong> <span id="summary-trip-name">-</span></p>
+      <p><strong>Dates:</strong> <span id="summary-trip-dates">-</span></p>
+      <p><strong>Travelers:</strong> <span id="summary-trip-travelers">-</span></p>
+      <p><strong>Budget:</strong> $<span id="summary-trip-budget">0</span> (Spent: $<span id="summary-trip-spent">0</span>)</p>
+    </section>
+
+    <section class="weather" aria-label="Weather forecast for selected destination">
+      <h2>Weather</h2>
+      <div id="weather-info">
+        <p>Select a destination on the map to view weather.</p>
+      </div>
+    </section>
+
+    <section class="recommendations" aria-label="Travel recommendations">
+      <h2>Recommendations</h2>
+      <div id="recommendations-list">
+        <p>Select a destination or trip to see recommendations.</p>
+      </div>
+    </section>
+  </aside>
+
+  <!-- Floating action button for adding activity -->
+  <button class="fab" id="fab-add-activity" aria-label="Add new activity to itinerary" title="Add Activity">add</button>
+
+  <!-- New Trip Modal -->
+  <dialog id="modal-new-trip" aria-modal="true" role="dialog" aria-labelledby="modal-new-trip-title" style="width: 90%; max-width: 460px; border-radius: 15px; padding: 20px; background: #16213e; color: #fff; border: none;">
+    <form id="form-new-trip">
+      <h2 id="modal-new-trip-title" style="margin-top: 0; color: #db2777;">Create New Trip</h2>
+      <label for="trip-name-input">Trip Name</label>
+      <input id="trip-name-input" name="tripName" type="text" required autocomplete="off" maxlength="60" />
+
+      <label for="trip-start-date-input">Start Date</label>
+      <input id="trip-start-date-input" name="startDate" type="date" required />
+
+      <label for="trip-end-date-input">End Date</label>
+      <input id="trip-end-date-input" name="endDate" type="date" required />
+
+      <label for="trip-travelers-input">Number of Travelers</label>
+      <input id="trip-travelers-input" name="travelers" type="number" min="1" max="50" required />
+
+      <label for="trip-budget-input">Budget (USD)</label>
+      <input id="trip-budget-input" name="budget" type="number" min="0" step="0.01" required />
+
+      <div style="display:flex; justify-content: flex-end; gap: 12px; margin-top: 20px;">
+        <button type="button" id="btn-cancel-new-trip">Cancel</button>
+        <input type="submit" value="Create" />
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Scripts -->
+  <script
+    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-o1bQT/2H1fjGs+0aLD7aOnpleSq36Mwte1pPKLOaCG8="
+    crossorigin=""
+  ></script>
+  <script>
+    (() => {
+      // Basic app state: in-memory stores
+      const state = {
+        trips: [],
+        selectedTripId: null,
+        destinations: [
+          {
+            id: 'paris',
+            name: 'Paris',
+            country: 'France',
+            coordinates: [48.8566, 2.3522],
+            description: 'Capital of France, famous for Eiffel Tower.',
+            attractions: [
+              'Eiffel Tower', 'Louvre Museum', 'Notre Dame Cathedral'
+            ],
+            weather: { temp: 18, condition: 'Clear' },
+            images: [
+              'https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/3ca67c79-11e0-4aae-8ad0-821d00299baa.png',
+            ],
+            ratings: 4.8,
+            osintNews: [
+              {
+                id: 'news1',
+                title: 'Surveillance drone spotted near Eiffel Tower',
+                date: '2024-06-01',
+                summary: 'Unidentified drone activity detected near major landmark.',
+                url: '#'
+              },
+              {
+                id: 'news2',
+                title: 'Cybersecurity seminar held in Paris',
+                date: '2024-05-28',
+                summary: 'Experts discuss cyber threats targeting tourists.',
+                url: '#'
+              }
+            ]
+          },
+          {
+            id: 'newyork',
+            name: 'New York City',
+            country: 'USA',
+            coordinates: [40.7128, -74.0060],
+            description: 'The Big Apple, known for its skyline and culture.',
+            attractions: [
+              'Statue of Liberty', 'Central Park', 'Metropolitan Museum of Art'
+            ],
+            weather: { temp: 22, condition: 'Partly Cloudy' },
+            images: [
+              'https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/ef5f1f52-ad2f-4f5b-af21-235c7e9c6cc9.png',
+            ],
+            ratings: 4.7,
+            osintNews: [
+              {
+                id: 'news3',
+                title: 'Increased surveillance at Times Square',
+                date: '2024-06-02',
+                summary: 'Security heightened due to recent events.',
+                url: '#'
+              }
+            ]
+          },
+          {
+            id: 'tokyo',
+            name: 'Tokyo',
+            country: 'Japan',
+            coordinates: [35.6895, 139.6917],
+            description: 'Capital of Japan, blend of tradition and technology.',
+            attractions: [
+              'Shibuya Crossing', 'Tokyo Tower', 'Meiji Shrine'
+            ],
+            weather: { temp: 20, condition: 'Rain' },
+            images: [
+              'https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/7e7de21f-2953-4e1a-a0fc-9e7c00606d1d.png',
+            ],
+            ratings: 4.9,
+            osintNews: [
+              {
+                id: 'news4',
+                title: 'Tokyo tech conference covers AI and security',
+                date: '2024-05-30',
+                summary: 'New developments in AI surveillance unveiled.',
+                url: '#'
+              }
+            ]
+          }
+        ],
+        itinerary: {}, // tripId -> array of day objects
+      };
+
+      // DOM refs
+      const tripsContainer = document.getElementById('trips-container');
+      const savedDestinationsContainer = document.getElementById('saved-destinations-container');
+      const travelGuidesContainer = document.getElementById('travel-guides-container');
+      const itineraryContainer = document.getElementById('itinerary-container');
+      const fabAddActivity = document.getElementById('fab-add-activity');
+      const summaryTripName = document.getElementById('summary-trip-name');
+      const summaryTripDates = document.getElementById('summary-trip-dates');
+      const summaryTripTravelers = document.getElementById('summary-trip-travelers');
+      const summaryTripBudget = document.getElementById('summary-trip-budget');
+      const summaryTripSpent = document.getElementById('summary-trip-spent');
+      const weatherInfo = document.getElementById('weather-info');
+      const recommendationsList = document.getElementById('recommendations-list');
+      const modalNewTrip = document.getElementById('modal-new-trip');
+      const formNewTrip = document.getElementById('form-new-trip');
+      const btnNewTrip = document.getElementById('btn-new-trip');
+      const btnCancelNewTrip = document.getElementById('btn-cancel-new-trip');
+      const destinationSearch = document.getElementById('destination-search');
+      const autocompleteList = document.getElementById('autocomplete-list');
+
+      // Initialize Leaflet map
+      const map = L.map('map', {
+        center: [20, 0],
+        zoom: 2,
+        minZoom: 2,
+        maxZoom: 18,
+      });
+      // OpenStreetMap tiles
+      const osmTiles = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution:
+          '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+      });
+      osmTiles.addTo(map);
+
+      // Map markers layer group
+      const markersGroup = L.layerGroup().addTo(map);
+
+      // Utility: Format date YYYY-MM-DD to readable
+      function formatDate(isoStr) {
+        const d = new Date(isoStr);
+        return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+      }
+
+      // Render trips in sidebar
+      function renderTrips() {
+        tripsContainer.innerHTML = '';
+        if (state.trips.length === 0) {
+          const p = document.createElement('p');
+          p.textContent = 'No trips created yet.';
+          tripsContainer.appendChild(p);
+          return;
+        }
+        state.trips.forEach(trip => {
+          const div = document.createElement('div');
+          div.className = 'trip-item' + (trip.id === state.selectedTripId ? ' selected' : '');
+          div.tabIndex = 0;
+          div.setAttribute('role', 'listitem');
+          div.textContent = trip.name;
+          div.addEventListener('click', () => {
+            selectTrip(trip.id);
+          });
+          div.addEventListener('keydown', e => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              selectTrip(trip.id);
+            }
+          });
+          tripsContainer.appendChild(div);
+        });
+      }
+
+      // Render saved destinations in sidebar
+      function renderSavedDestinations() {
+        savedDestinationsContainer.innerHTML = '';
+        state.destinations.forEach(dest => {
+          const div = document.createElement('div');
+          div.className = 'destination-item';
+          div.setAttribute('role', 'listitem');
+          div.tabIndex = 0;
+          div.textContent = dest.name + ', ' + dest.country;
+          div.addEventListener('click', () => {
+            // Center map on destination
+            map.flyTo(dest.coordinates, 10, { duration: 1 });
+            showOSINTNews(dest);
+            highlightDestinationOnMap(dest.id);
+          });
+          div.addEventListener('keydown', e => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              map.flyTo(dest.coordinates, 10, { duration: 1 });
+              showOSINTNews(dest);
+              highlightDestinationOnMap(dest.id);
+            }
+          });
+          savedDestinationsContainer.appendChild(div);
+        });
+      }
+
+      // Render travel guides placeholder
+      function renderTravelGuides() {
+        travelGuidesContainer.innerHTML = '';
+        const guides = [
+          'Intel Travel Safety Bulletin',
+          'Cybersecurity Tips for Travelers',
+          'Local Intelligence Updates',
+          'Emergency Contacts Guide'
+        ];
+        guides.forEach(guideTitle => {
+          const div = document.createElement('div');
+          div.className = 'guide-item';
+          div.setAttribute('role', 'listitem');
+          div.tabIndex = 0;
+          div.textContent = guideTitle;
+          div.addEventListener('click', () => alert(`Opening guide: ${guideTitle}`));
+          div.addEventListener('keydown', e => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              alert(`Opening guide: ${guideTitle}`);
+            }
+          });
+          travelGuidesContainer.appendChild(div);
+        });
+      }
+
+      // Create new trip and add to state
+      function createTrip(data) {
+        const id = crypto.randomUUID();
+        const newTrip = {
+          id,
+          name: data.name,
+          destinations: [], // initially empty, user can add later
+          startDate: data.startDate,
+          endDate: data.endDate,
+          travelers: data.travelers,
+          budget: {
+            total: Number(data.budget),
+            spent: 0,
+            categories: {
+              accommodation: 0,
+              transport: 0,
+              food: 0,
+              activities: 0,
+              other: 0,
+            }
+          },
+          status: 'planning',
+          itinerary: [],
+          createdAt: new Date().toISOString(),
+        };
+        state.trips.push(newTrip);
+        state.itinerary[id] = [];
+        selectTrip(id);
+        renderTrips();
+        updateSummary();
+        modalNewTrip.close();
+      }
+
+      // Select trip by id
+      function selectTrip(id) {
+        state.selectedTripId = id;
+        renderTrips();
+        updateItinerary();
+        updateSummary();
+        updateRecommendations();
+        // Clear weather info on trip selection (requires destination selection)
+        weatherInfo.innerHTML = '<p>Select a destination on the map to view weather.</p>';
+      }
+
+      // Update trip summary details
+      function updateSummary() {
+        const trip = state.trips.find(t => t.id === state.selectedTripId);
+        if (!trip) {
+          summaryTripName.textContent = '-';
+          summaryTripDates.textContent = '-';
+          summaryTripTravelers.textContent = '-';
+          summaryTripBudget.textContent = '0';
+          summaryTripSpent.textContent = '0';
+          return;
+        }
+        summaryTripName.textContent = trip.name;
+        const start = formatDate(trip.startDate);
+        const end = formatDate(trip.endDate);
+        summaryTripDates.textContent = `${start} — ${end}`;
+        summaryTripTravelers.textContent = trip.travelers;
+        summaryTripBudget.textContent = trip.budget.total.toFixed(2);
+        summaryTripSpent.textContent = trip.budget.spent.toFixed(2);
+      }
+
+      // Initialize map markers for destinations
+      const mapMarkers = new Map();
+
+      // Clear then add markers for all destinations
+      function renderMapMarkers() {
+        markersGroup.clearLayers();
+        mapMarkers.clear();
+        state.destinations.forEach(dest => {
+          const marker = L.marker(dest.coordinates, {
+            title: dest.name
+          });
+          marker.addTo(markersGroup);
+          marker.on('click', () => {
+            showOSINTNews(dest);
+            highlightDestinationOnMap(dest.id);
+            updateWeatherPanel(dest.weather, dest.name);
+            updateRecommendations(dest);
+            addDestinationToTrip(dest);
+          });
+          mapMarkers.set(dest.id, marker);
+        });
+      }
+
+      // Highlight the marker visually for a destination
+      let lastHighlightedMarker = null;
+      function highlightDestinationOnMap(destId) {
+        if (lastHighlightedMarker) {
+          lastHighlightedMarker.setIcon(new L.Icon.Default());
+        }
+        const marker = mapMarkers.get(destId);
+        if (marker) {
+          marker.setIcon(
+            L.icon({
+              iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+              iconSize: [30, 50],
+              iconAnchor: [15, 50],
+              popupAnchor: [1, -34],
+              shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+              shadowSize: [50, 64],
+              shadowAnchor: [15, 64],
+              className: 'highlighted-marker',
+            })
+          );
+          lastHighlightedMarker = marker;
+        }
+      }
+
+      // Show OSINT news for a destination in a popup on the map
+      let newsPopup = null;
+      function showOSINTNews(dest) {
+        if (newsPopup) {
+          map.closePopup(newsPopup);
+        }
+        let content = `<h3 style="color:#db2777;">OSINT News: ${dest.name}</h3><ul style="padding-left:20px;">`;
+        dest.osintNews.forEach(news => {
+          content += `<li><strong>${news.title}</strong> <small>(${formatDate(news.date)})</small><br/>${news.summary} <a href="${news.url}" target="_blank" rel="noopener noreferrer" style="color:#ea489a;">Read more</a></li>`;
+        });
+        content += '</ul>';
+        newsPopup = L.popup({ maxWidth: 350 })
+          .setLatLng(dest.coordinates)
+          .setContent(content)
+          .openOn(map);
+      }
+
+      // Update weather panel content
+      function updateWeatherPanel(weather, locationName) {
+        if (!weather) {
+          weatherInfo.innerHTML = `<p>No weather data available for ${locationName}.</p>`;
+          return;
+        }
+        const weatherIcon = weather.condition.toLowerCase().replace(' ', '-');
+        weatherInfo.innerHTML = `
+          <p><strong>Location:</strong> ${locationName}</p>
+          <p><strong>Temperature:</strong> ${weather.temp}°C</p>
+          <p><strong>Condition:</strong> ${weather.condition}</p>
+        `;
+      }
+
+      // Update recommendations panel content
+      function updateRecommendations(dest) {
+        if (!dest) {
+          recommendationsList.innerHTML = '<p>Select a destination or trip to see recommendations.</p>';
+          return;
+        }
+        // Simple simulated recommendations for demo
+        const recs = [
+          'Avoid high crowd areas after dark.',
+          'Use secure VPN when accessing public Wi-Fi.',
+          'Stay alert and report suspicious activities immediately.',
+          'Carry necessary ID and emergency contacts.'
+        ];
+        let html = `<ul style="padding-left:20px;">`;
+        recs.forEach(r => {
+          html += `<li>${r}</li>`;
+        });
+        html += `</ul>`;
+        recommendationsList.innerHTML = html;
+      }
+
+      // Add destination to currently selected trip's destinations, if not exists
+      function addDestinationToTrip(dest) {
+        const trip = state.trips.find(t => t.id === state.selectedTripId);
+        if (!trip) return;
+        if (!trip.destinations.find(d => d.id === dest.id)) {
+          trip.destinations.push({ ...dest });
+          renderTrips();
+          updateSummary();
+          alert(`Destination "${dest.name}" added to trip "${trip.name}"`);
+        }
+      }
+
+      // Render itinerary for selected trip
+      function updateItinerary() {
+        itineraryContainer.innerHTML = '';
+        const trip = state.trips.find(t => t.id === state.selectedTripId);
+        if (!trip) {
+          itineraryContainer.innerHTML = '<p>No trip selected.</p>';
+          fabAddActivity.disabled = true;
+          return;
+        }
+        fabAddActivity.disabled = false;
+        const itinerary = state.itinerary[trip.id] || [];
+        if (itinerary.length === 0) {
+          itineraryContainer.innerHTML = '<p>Itinerary is empty. Use the + button to add activities.</p>';
+          return;
+        }
+        itinerary.forEach(day => {
+          const dayDiv = document.createElement('div');
+          dayDiv.className = 'day-plan';
+          const dateStr = new Date(day.date).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+          dayDiv.innerHTML = `<h4>Day ${day.day}: ${dateStr}</h4>`;
+          const ul = document.createElement('ul');
+          ul.className = 'activity-list';
+          ul.setAttribute('aria-label', `Activities for Day ${day.day}`);
+          if (day.activities.length === 0) {
+            const li = document.createElement('li');
+            li.textContent = '(No activities planned)';
+            ul.appendChild(li);
+          } else {
+            day.activities.forEach((act, idx) => {
+              const li = document.createElement('li');
+              li.tabIndex = 0;
+              li.setAttribute('draggable', 'true');
+              li.textContent = act;
+              li.dataset.activityIndex = idx;
+              // Drag and drop handlers for activities
+              li.addEventListener('dragstart', onDragStart);
+              li.addEventListener('dragover', onDragOver);
+              li.addEventListener('drop', onDrop);
+              ul.appendChild(li);
+            });
+          }
+          dayDiv.appendChild(ul);
+          itineraryContainer.appendChild(dayDiv);
+        });
+      }
+
+      // Drag & drop handlers for itinerary activity scheduling
+      let dragSrcEl = null;
+
+      function onDragStart(e) {
+        dragSrcEl = e.target;
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', e.target.dataset.activityIndex);
+        e.target.style.opacity = '0.5';
+      }
+
+      function onDragOver(e) {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+      }
+
+      function onDrop(e) {
+        e.stopPropagation();
+        if (dragSrcEl !== this) {
+          // Swap activities in state
+          const tripId = state.selectedTripId;
+          if (!tripId) return;
+          const dayElements = Array.from(itineraryContainer.querySelectorAll('.day-plan'));
+          const draggedIndex = Number(dragSrcEl.dataset.activityIndex);
+          const targetIndex = Number(this.dataset.activityIndex);
+          let dayIndex = dayElements.findIndex(dayEl => dayEl.contains(dragSrcEl));
+          if (dayIndex === -1) dayIndex = 0;
+          const activities = state.itinerary[tripId][dayIndex].activities;
+          // Swap in array
+          [activities[draggedIndex], activities[targetIndex]] = [activities[targetIndex], activities[draggedIndex]];
+          updateItinerary();
+        }
+        dragSrcEl.style.opacity = '1';
+      }
+
+      document.addEventListener('dragend', e => {
+        if (dragSrcEl) dragSrcEl.style.opacity = '1';
+        dragSrcEl = null;
+      });
+
+      // Add activity button popup
+      fabAddActivity.addEventListener('click', () => {
+        const tripId = state.selectedTripId;
+        if (!tripId) {
+          alert('Please select a trip first.');
+          return;
+        }
+        const trip = state.trips.find(t => t.id === tripId);
+        if (!trip) return;
+
+        // Prompt day to add activity to
+        let dayToAdd = 1;
+        if (state.itinerary[tripId].length === 0) {
+          // Create default itinerary days based on trip length
+          const startDate = new Date(trip.startDate);
+          const endDate = new Date(trip.endDate);
+          const diffDays = Math.max(1, Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1);
+          state.itinerary[tripId] = [];
+          for (let i = 0; i < diffDays; i++) {
+            const dayDate = new Date(startDate);
+            dayDate.setDate(dayDate.getDate() + i);
+            state.itinerary[tripId].push({
+              day: i + 1,
+              date: dayDate.toISOString().split('T')[0],
+              activities: [],
+            });
+          }
+          updateItinerary();
+        }
+
+        const dayStr = prompt(`Enter day number to add activity (1 to ${state.itinerary[tripId].length}):`, '1');
+        const dayNum = Number(dayStr);
+        if (isNaN(dayNum) || dayNum < 1 || dayNum > state.itinerary[tripId].length) {
+          alert('Invalid day number.');
+          return;
+        }
+
+        const activity = prompt('Enter activity description:');
+        if (!activity || activity.trim() === '') {
+          alert('Activity cannot be empty.');
+          return;
+        }
+
+        state.itinerary[tripId][dayNum - 1].activities.push(activity.trim());
+        updateItinerary();
+      });
+
+      // New trip modal handlers
+      btnNewTrip.addEventListener('click', () => modalNewTrip.showModal());
+      btnCancelNewTrip.addEventListener('click', () => modalNewTrip.close());
+
+      formNewTrip.addEventListener('submit', e => {
+        e.preventDefault();
+        const formData = new FormData(formNewTrip);
+        const data = {
+          name: formData.get('tripName'),
+          startDate: formData.get('startDate'),
+          endDate: formData.get('endDate'),
+          travelers: Number(formData.get('travelers')),
+          budget: Number(formData.get('budget')),
+        };
+        if (data.startDate > data.endDate) {
+          alert('End Date must be after Start Date.');
+          return;
+        }
+        createTrip(data);
+        formNewTrip.reset();
+      });
+
+      // Destination search autocomplete
+      let currentFocus = -1;
+      destinationSearch.addEventListener('input', function () {
+        const val = this.value.trim().toLowerCase();
+        autocompleteList.innerHTML = '';
+        if (!val) {
+          autocompleteList.hidden = true;
+          this.setAttribute('aria-expanded', 'false');
+          return;
+        }
+        const matches = state.destinations.filter(d =>
+          d.name.toLowerCase().startsWith(val)
+        );
+        if (matches.length === 0) {
+          autocompleteList.hidden = true;
+          this.setAttribute('aria-expanded', 'false');
+          return;
+        }
+        matches.forEach((d, i) => {
+          const item = document.createElement('div');
+          item.textContent = d.name + ', ' + d.country;
+          item.setAttribute('role', 'option');
+          item.id = 'autocomplete-item-' + i;
+          item.addEventListener('click', () => {
+            destinationSearch.value = d.name;
+            autocompleteList.hidden = true;
+            selectDestinationFromSearch(d);
+          });
+          autocompleteList.appendChild(item);
+        });
+        autocompleteList.hidden = false;
+        this.setAttribute('aria-expanded', 'true');
+        currentFocus = -1;
+      });
+
+      destinationSearch.addEventListener('keydown', function(e){
+        const items = autocompleteList.querySelectorAll('div');
+        if (!items.length) return;
+        if (e.key === 'ArrowDown') {
+          e.preventDefault();
+          currentFocus++;
+          if (currentFocus >= items.length) currentFocus = 0;
+          addActive(items);
+        }
+        else if (e.key === 'ArrowUp') {
+          e.preventDefault();
+          currentFocus--;
+          if (currentFocus < 0) currentFocus = items.length - 1;
+          addActive(items);
+        }
+        else if (e.key === 'Enter') {
+          e.preventDefault();
+          if (currentFocus > -1) {
+            items[currentFocus].click();
+          }
+        }
+      });
+
+      function addActive(items) {
+        removeActive(items);
+        if (currentFocus >= items.length) currentFocus = 0;
+        if (currentFocus < 0) currentFocus = items.length - 1;
+        items[currentFocus].classList.add('active');
+        destinationSearch.setAttribute('aria-activedescendant', items[currentFocus].id);
+      }
+      function removeActive(items) {
+        items.forEach(i => i.classList.remove('active'));
+        destinationSearch.removeAttribute('aria-activedescendant');
+      }
+
+      function selectDestinationFromSearch(dest) {
+        map.flyTo(dest.coordinates, 10, { duration: 1 });
+        showOSINTNews(dest);
+        highlightDestinationOnMap(dest.id);
+        updateWeatherPanel(dest.weather, dest.name);
+        updateRecommendations(dest);
+        addDestinationToTrip(dest);
+      }
+
+      // Initialize app
+      function init() {
+        renderTrips();
+        renderSavedDestinations();
+        renderTravelGuides();
+        renderMapMarkers();
+        updateSummary();
+        updateItinerary();
+      }
+
+      // Start app
+      init();
+
+    })();
+  </script>
+</div>
+</body>
+</html>
+
