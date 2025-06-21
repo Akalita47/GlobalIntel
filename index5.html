@@ -1,1 +1,1968 @@
+<!DOCTYPE html>
+<html lang="en" >
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AI-Specialized OSINT News Platform</title>
+
+  <!-- Google Material Icons CDN -->
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+
+  <style>
+    /* Reset and base */
+    *, *::before, *::after {
+      box-sizing: border-box;
+    }
+    body {
+      margin: 0;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
+        Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+      color: var(--text-primary);
+      background-color: var(--bg-primary);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
+    a {
+      color: var(--accent-color);
+      text-decoration: none;
+      transition: color 0.3s ease;
+    }
+    a:hover, a:focus {
+      color: var(--accent-color-hover);
+      outline: none;
+    }
+    button {
+      font-family: inherit;
+      cursor: pointer;
+      border: none;
+      background: transparent;
+      color: inherit;
+    }
+    button:focus, a:focus {
+      outline: 2px solid var(--accent-color);
+      outline-offset: 2px;
+    }
+    img {
+      max-width: 100%;
+      display: block;
+    }
+
+    /* Scrollbar for webkit */
+    ::-webkit-scrollbar {
+      width: 12px;
+    }
+    ::-webkit-scrollbar-track {
+      background: var(--bg-secondary);
+    }
+    ::-webkit-scrollbar-thumb {
+      background-color: var(--accent-color);
+      border-radius: 6px;
+      border: 3px solid var(--bg-secondary);
+    }
+
+    /* CSS variables for theming */
+    :root {
+      --accent-color: #0b75c9;
+      --accent-color-hover: #065a9d;
+      --text-primary: #222222;
+      --text-secondary: #555555;
+      --bg-primary: #fefefe;
+      --bg-secondary: #f6f8fb;
+      --card-bg: #ffffff;
+      --card-shadow: rgba(0, 0, 0, 0.08);
+      --border-radius: 12px;
+      --header-height: 60px;
+      --sidebar-bg: #fefefe;
+      --font-size-base: 16px;
+      --line-height-base: 1.6;
+      --box-shadow: 0 4px 12px var(--card-shadow);
+      --reading-progress-bg: #0b75c9;
+      --comments-bg: #fafafa;
+      --danger-color: #d03c3c;
+      --success-color: #3c9d31;
+      --transition-base: 0.3s ease;
+    }
+    [data-theme='dark'] {
+      --accent-color: #53a7ff;
+      --accent-color-hover: #7ec3ff;
+      --text-primary: #eaeaea;
+      --text-secondary: #888888;
+      --bg-primary: #121212;
+      --bg-secondary: #1c1c1c;
+      --card-bg: #1e1e1e;
+      --card-shadow: rgba(0, 0, 0, 0.6);
+      --sidebar-bg: #1a1a1a;
+      --reading-progress-bg: #53a7ff;
+      --comments-bg: #2a2a2a;
+      --danger-color: #ff6e6e;
+      --success-color: #96d38c;
+    }
+
+    /* Layout base grid */
+    #app {
+      display: grid;
+      grid-template-columns: 300px 1fr 280px;
+      grid-template-rows: var(--header-height) 1fr;
+      grid-template-areas:
+        "header header header"
+        "sidebar main aside";
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* Sticky header */
+    header#app-header {
+      grid-area: header;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      background: var(--card-bg);
+      box-shadow: 0 2px 8px var(--card-shadow);
+      position: sticky;
+      top: 0;
+      z-index: 99;
+    }
+
+    /* Logo */
+    .logo {
+      font-weight: 900;
+      font-size: 1.5rem;
+      color: var(--accent-color);
+      letter-spacing: 0.06em;
+      user-select: none;
+      cursor: default;
+      user-select: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .logo .material-icons {
+      font-size: 1.8rem;
+      color: var(--accent-color);
+      transform: rotate(-15deg);
+    }
+
+    /* Search bar container */
+    .search-container {
+      flex: 1;
+      margin: 0 16px;
+      position: relative;
+      max-width: 600px;
+    }
+    .search-container input {
+      width: 100%;
+      padding: 10px 44px 10px 14px;
+      border-radius: 32px;
+      border: 1px solid var(--bg-secondary);
+      font-size: 1rem;
+      color: var(--text-primary);
+      background-color: var(--bg-secondary);
+      transition: border-color 0.3s;
+    }
+    .search-container input:focus {
+      outline: none;
+      border-color: var(--accent-color);
+      background-color: var(--card-bg);
+      box-shadow: 0 0 6px var(--accent-color);
+    }
+    .search-container .material-icons {
+      position: absolute;
+      right: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-secondary);
+      font-size: 1.4rem;
+      user-select: none;
+    }
+
+    /* User menu */
+    .user-menu {
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .user-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background-image: url("https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/19a01ed1-bfac-441d-960e-66fb1af1cb71.png");
+      background-size: cover;
+      background-position: center;
+      cursor: pointer;
+      border: 2px solid var(--accent-color);
+      transition: border-color 0.3s;
+    }
+    .user-avatar:hover, .user-avatar:focus {
+      border-color: var(--accent-color-hover);
+      outline: none;
+    }
+    .user-name {
+      font-weight: 600;
+      color: var(--text-primary);
+      user-select: none;
+      display: none;
+    }
+    @media (min-width: 1025px) {
+      .user-name {
+        display: block;
+      }
+    }
+    .user-menu button {
+      background: transparent;
+      border-radius: 50%;
+      padding: 4px;
+      color: var(--accent-color);
+      font-size: 1.6rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .user-menu button:hover, .user-menu button:focus {
+      color: var(--accent-color-hover);
+      outline: none;
+      background-color: var(--bg-secondary);
+    }
+
+    /* Sidebar left */
+    aside#sidebar {
+      grid-area: sidebar;
+      background: var(--sidebar-bg);
+      border-right: 1px solid var(--bg-secondary);
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+    }
+
+    /* Categories */
+    .categories {
+      margin-bottom: 24px;
+    }
+    .categories h2 {
+      font-size: 1.3rem;
+      font-weight: 700;
+      margin-bottom: 12px;
+      color: var(--text-primary);
+    }
+    .category-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      max-height: 50vh;
+      overflow-y: auto;
+    }
+    .category-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 14px;
+      border-radius: var(--border-radius);
+      cursor: pointer;
+      user-select: none;
+      font-weight: 600;
+      font-size: 0.95rem;
+      transition: background-color 0.3s, color 0.3s;
+      border: 2px solid transparent;
+      color: var(--text-secondary);
+    }
+    .category-item.selected {
+      color: var(--accent-color);
+      background-color: var(--accent-color-hover);
+      border-color: var(--accent-color);
+    }
+    .category-item .count {
+      margin-left: auto;
+      background-color: var(--accent-color);
+      color: white;
+      font-size: 0.7rem;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-weight: 700;
+    }
+
+    /* Trending topics */
+    .trending-topics {
+      margin-top: auto;
+    }
+    .trending-topics h2 {
+      font-size: 1.3rem;
+      font-weight: 700;
+      margin-bottom: 12px;
+      color: var(--text-primary);
+    }
+    .trend-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      max-height: 15vh;
+      overflow-y: auto;
+    }
+    .trend-item {
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      color: var(--accent-color-hover);
+      user-select: none;
+    }
+    .trend-item:hover, .trend-item:focus {
+      color: var(--accent-color);
+      outline: none;
+    }
+
+    /* Main content area */
+    main#main-content {
+      grid-area: main;
+      overflow-y: auto;
+      padding: 16px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      background-color: var(--bg-secondary);
+    }
+    .articles-feed {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 24px;
+    }
+
+    /* Article card */
+    article.article-card {
+      background: var(--card-bg);
+      border-radius: var(--border-radius);
+      box-shadow: var(--box-shadow);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      user-select: none;
+      cursor: pointer;
+      position: relative;
+      transition: transform 0.3s ease;
+      outline-offset: 2px;
+      outline: none;
+    }
+    article.article-card:focus, article.article-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 20px var(--card-shadow);
+      outline: 2px solid var(--accent-color);
+      outline-offset: 4px;
+    }
+    .article-image-container {
+      width: 100%;
+      height: 180px;
+      overflow: hidden;
+      background-color: var(--bg-secondary);
+      position: relative;
+      background-position: center;
+      background-repeat: no-repeat;
+      background-size: cover;
+      border-top-left-radius: var(--border-radius);
+      border-top-right-radius: var(--border-radius);
+    }
+    .article-image-container img {
+      object-fit: cover;
+      min-height: 180px;
+      width: 100%;
+      height: 100%;
+      opacity: 0;
+      transition: opacity 0.6s ease-in-out;
+      border-top-left-radius: var(--border-radius);
+      border-top-right-radius: var(--border-radius);
+    }
+    .article-image-container img.loaded {
+      opacity: 1;
+    }
+    .article-content {
+      padding: 16px 18px;
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+    }
+    .article-title {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 8px;
+      line-height: 1.25;
+      flex-grow: 0;
+    }
+    .article-summary {
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+      line-height: 1.4;
+      margin-bottom: 12px;
+      flex-grow: 1;
+      overflow: hidden;
+      display: -webkit-box;
+      -webkit-line-clamp:3;
+      -webkit-box-orient: vertical;
+    }
+    .article-meta {
+      font-size: 0.80rem;
+      color: var(--text-secondary);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+    }
+    .article-meta span {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .article-meta .material-icons {
+      font-size: 1.1rem;
+      color: var(--accent-color);
+    }
+    .category-chip {
+      display: inline-block;
+      background-color: var(--accent-color);
+      color: white;
+      font-size: 0.7rem;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-weight: 700;
+      user-select: none;
+      pointer-events: none;
+    }
+    /* Bookmark icon */
+    .bookmark-btn {
+      cursor: pointer;
+      background: transparent;
+      border: none;
+      color: var(--text-secondary);
+      font-size: 1.4rem;
+      align-self: flex-end;
+      transition: color 0.3s ease;
+      user-select: none;
+      z-index: 3;
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      border-radius: 50%;
+      padding: 4px;
+      background-color: rgba(255 255 255 / 0.85);
+      backdrop-filter: blur(8px);
+    }
+    .bookmark-btn:hover, .bookmark-btn:focus {
+      color: var(--accent-color);
+      outline: none;
+      background-color: rgba(255 255 255 / 1);
+    }
+    .bookmark-btn.bookmarked {
+      color: var(--danger-color);
+    }
+
+    /* Skeleton Loader */
+    .skeleton {
+      background: linear-gradient(90deg, #e0e0e0 25%, #f0f0f0 37%, #e0e0e0 63%);
+      background-size: 400% 100%;
+      animation: shimmer 1.4s ease infinite;
+      border-radius: var(--border-radius);
+    }
+    .skeleton-text {
+      height: 14px;
+      margin-bottom: 8px;
+      width: 90%;
+    }
+    .skeleton-title {
+      height: 20px;
+      margin-bottom: 12px;
+      width: 80%;
+      border-radius: 8px;
+    }
+    .skeleton-img {
+      height: 180px;
+      width: 100%;
+      border-radius: var(--border-radius) var(--border-radius) 0 0;
+    }
+    @keyframes shimmer {
+      0% {
+        background-position: -400% 0;
+      }
+      100% {
+        background-position: 400% 0;
+      }
+    }
+
+    /* Aside right panel */
+    aside#aside {
+      grid-area: aside;
+      background: var(--sidebar-bg);
+      padding: 16px;
+      border-left: 1px solid var(--bg-secondary);
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+      gap: 16px;
+    }
+
+    /* Tweaked section base */
+    section {
+      background: var(--card-bg);
+      border-radius: var(--border-radius);
+      padding: 16px;
+      box-shadow: var(--box-shadow);
+    }
+    section h3 {
+      margin-top: 0;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    /* Bookmarks & Reading List */
+    .bookmarks, .reading-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      max-height: 40vh;
+      overflow-y: auto;
+    }
+    .bookmark-item, .reading-list-item {
+      background: var(--bg-secondary);
+      border-radius: 10px;
+      padding: 8px 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.9rem;
+      color: var(--text-primary);
+      cursor: pointer;
+      user-select: none;
+      transition: background-color 0.2s ease;
+    }
+    .bookmark-item:hover, .reading-list-item:hover,
+    .bookmark-item:focus, .reading-list-item:focus {
+      background-color: var(--accent-color-hover);
+      color: white;
+      outline: none;
+    }
+    .bookmark-item .material-icons, .reading-list-item .material-icons {
+      font-size: 1.2rem;
+      color: inherit;
+      pointer-events: none;
+    }
+    .bookmark-item .remove-btn, .reading-list-item .remove-btn {
+      background: transparent;
+      border: none;
+      font-size: 1.2rem;
+      color: var(--danger-color);
+      cursor: pointer;
+      padding: 0;
+      margin-left: 8px;
+      flex-shrink: 0;
+    }
+    .bookmark-item .remove-btn:hover, .reading-list-item .remove-btn:hover {
+      color: #ff403c;
+    }
+
+    /* Reading progress circle */
+    .reading-progress-circle {
+      position: relative;
+      min-width: 36px;
+      min-height: 36px;
+      margin-left: 8px;
+    }
+    .reading-progress-circle svg {
+      transform: rotate(-90deg);
+      width: 36px;
+      height: 36px;
+    }
+    .reading-progress-circle circle {
+      fill: none;
+      stroke-width: 4;
+      stroke-linecap: round;
+    }
+    .reading-progress-circle circle.background {
+      stroke: var(--bg-secondary);
+    }
+    .reading-progress-circle circle.progress {
+      stroke: var(--reading-progress-bg);
+      transition: stroke-dashoffset 0.3s ease;
+      transform-origin: center center;
+    }
+    /* center text in circle */
+    .reading-progress-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 0.75rem;
+      font-weight: bold;
+      color: var(--text-primary);
+      user-select: none;
+    }
+
+    /* Reading list progress bar */
+    .progress-bar {
+      height: 4px;
+      background-color: var(--bg-secondary);
+      border-radius: 4px;
+      overflow: hidden;
+      flex-grow: 1;
+      margin-left: 8px;
+    }
+    .progress-bar-inner {
+      height: 100%;
+      width: 0;
+      background-color: var(--reading-progress-bg);
+      transition: width 0.3s ease;
+    }
+
+    /* Controls container */
+    .controls {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin: 12px 0 0 0;
+      flex-wrap: wrap;
+    }
+    .control-label {
+      font-weight: 600;
+      color: var(--text-primary);
+      user-select: none;
+    }
+    .select-multiple {
+      min-width: 180px;
+      max-width: 100%;
+      border-radius: var(--border-radius);
+      border: 1px solid var(--bg-secondary);
+      padding: 6px 8px;
+      font-size: 0.9rem;
+      background: var(--card-bg);
+      cursor: pointer;
+      color: var(--text-primary);
+      user-select: none;
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      appearance: none;
+    }
+    .checkbox-group {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      max-width: 460px;
+    }
+    .checkbox-item {
+      user-select: none;
+    }
+    .checkbox-item input {
+      margin-right: 6px;
+      cursor: pointer;
+    }
+
+    /* Dark/Light toggle */
+    .toggle-switch {
+      position: relative;
+      width: 44px;
+      height: 24px;
+      display: inline-block;
+    }
+    .toggle-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-color: #ccc;
+      transition: .4s;
+      border-radius: 24px;
+    }
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 18px;
+      width: 18px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: .4s;
+      border-radius: 50%;
+    }
+    input:checked + .slider {
+      background-color: var(--accent-color);
+    }
+    input:checked + .slider:before {
+      transform: translateX(20px);
+    }
+
+    /* Comment system */
+    .comments-section {
+      margin-top: 8px;
+      background: var(--comments-bg);
+      border-radius: var(--border-radius);
+      padding: 12px;
+      max-height: 240px;
+      overflow-y: auto;
+      font-size: 0.9rem;
+      color: var(--text-primary);
+    }
+
+    .comment-item {
+      border-bottom: 1px solid var(--bg-secondary);
+      padding: 8px 0;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .comment-item:last-child {
+      border-bottom: none;
+    }
+    .comment-author {
+      font-weight: 700;
+      color: var(--accent-color);
+    }
+    .comment-text {
+      white-space: pre-wrap;
+    }
+    .comment-date {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      user-select: none;
+      align-self: flex-end;
+    }
+    .comment-actions {
+      margin-top: 6px;
+      display: flex;
+      gap: 12px;
+      justify-content: flex-end;
+    }
+    .comment-btn {
+      background: transparent;
+      border: none;
+      font-size: 0.9rem;
+      color: var(--accent-color);
+      cursor: pointer;
+      padding: 0;
+      user-select: none;
+    }
+    .comment-btn:hover {
+      text-decoration: underline;
+      outline: none;
+    }
+
+    /* Pagination loading */
+    .loading-indicator {
+      text-align: center;
+      padding: 24px 0;
+      font-weight: 600;
+      color: var(--accent-color);
+    }
+
+    /* Breaking news notification banner */
+    .breaking-news-banner {
+      position: fixed;
+      top: var(--header-height);
+      left: 50%;
+      transform: translateX(-50%);
+      background-color: var(--danger-color);
+      color: white;
+      padding: 12px 32px;
+      border-radius: var(--border-radius);
+      box-shadow: var(--box-shadow);
+      font-weight: 700;
+      z-index: 110;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+      user-select: none;
+    }
+    .breaking-news-banner.show {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    /* Responsive breakpoints: mobile */
+    @media (max-width: 1024px) {
+      #app {
+        grid-template-columns: 280px 1fr;
+        grid-template-areas:
+          "header header"
+          "sidebar main";
+      }
+      aside#aside {
+        display: none;
+      }
+    }
+    @media (max-width: 640px) {
+      #app {
+        grid-template-columns: 1fr;
+        grid-template-rows: var(--header-height) 1fr;
+        grid-template-areas:
+          "header"
+          "main";
+      }
+      aside#sidebar {
+        display: none;
+      }
+      main#main-content {
+        padding: 12px 16px;
+      }
+      .articles-feed {
+        grid-template-columns: 1fr;
+        gap: 16px;
+      }
+      .search-container {
+        max-width: none;
+        margin: 0 8px;
+      }
+    }
+
+  </style>
+</head>
+
+<body>
+  <div id="app" data-theme="light" lang="en" aria-label="Advanced OSINT News Platform Application">
+    <!-- Header -->
+    <header id="app-header" role="banner" aria-label="Main navigation">
+      <div class="logo" aria-label="OSINT News Platform logo" tabindex="0" role="img">
+        <span class="material-icons" aria-hidden="true">visibility</span> OSINT News AI
+      </div>
+
+      <div class="search-container">
+        <label for="search-input" class="sr-only">Search articles</label>
+        <input id="search-input" type="search" placeholder="Search news articles..." aria-autocomplete="list" aria-controls="search-results" autocomplete="off" />
+        <span class="material-icons" aria-hidden="true">search</span>
+      </div>
+
+      <nav class="user-menu" role="navigation" aria-label="User menu">
+        <button id="dark-mode-toggle" aria-pressed="false" aria-label="Toggle dark and light mode" title="Toggle dark mode">
+          <span class="material-icons" aria-hidden="true">dark_mode</span>
+        </button>
+        <button id="font-settings-toggle" aria-expanded="false" aria-controls="font-settings-panel" aria-label="Open font size and line height settings" title="Reading preferences">
+          <span class="material-icons" aria-hidden="true">format_size</span>
+        </button>
+        <div tabindex="0" class="user-avatar" role="img" aria-label="User avatar"></div>
+        <span class="user-name" aria-live="polite">Guest</span>
+      </nav>
+    </header>
+
+    <!-- Left sidebar: Categories and trending topics -->
+    <aside id="sidebar" role="complementary" aria-label="Categories and trending topics">
+      <section class="categories" aria-labelledby="categories-title">
+        <h2 id="categories-title">Categories</h2>
+        <ul class="category-list" id="category-list" tabindex="0" aria-multiselectable="true" role="listbox" aria-label="News categories">
+          <!-- dynamically loaded categories with counts -->
+        </ul>
+      </section>
+
+      <section class="trending-topics" aria-label="Trending topics">
+        <h2>Trending Topics</h2>
+        <ul class="trend-list" id="trending-topics" tabindex="0" role="list" aria-label="Trending topics">
+          <!-- dynamically loaded trending topics -->
+        </ul>
+      </section>
+    </aside>
+
+    <!-- Main content: Article feed -->
+    <main id="main-content" role="main" tabindex="-1" aria-live="polite" aria-atomic="false">
+      <section aria-label="Article feed">
+        <div class="articles-feed" id="articles-feed" tabindex="0" role="list" aria-label="News articles feed">
+          <!-- articles inserted here -->
+        </div>
+        <div class="loading-indicator" id="loading-indicator" aria-live="assertive" aria-atomic="true" style="display:none;">Loading articles...</div>
+      </section>
+    </main>
+
+    <!-- Right sidebar: trending, bookmarks, reading list -->
+    <aside id="aside" role="complementary" aria-label="Trending, bookmarks, reading list">
+      <section class="trending" aria-label="Trending articles">
+        <h3>Trending Articles</h3>
+        <ul id="trending-articles" class="trend-list" role="list" tabindex="0">
+          <!-- trending articles filled here -->
+        </ul>
+      </section>
+
+      <section class="bookmarks" aria-label="Bookmarked articles" tabindex="0">
+        <h3>Bookmarks</h3>
+        <ul id="bookmarks-list" role="list">
+          <!-- bookmark items -->
+        </ul>
+      </section>
+
+      <section class="reading-list" aria-label="Reading list" tabindex="0">
+        <h3>Reading List</h3>
+        <ul id="reading-list" role="list">
+          <!-- reading list items -->
+        </ul>
+      </section>
+    </aside>
+
+    <!-- Font settings panel (hidden by default) -->
+    <div id="font-settings-panel" role="region" aria-label="Font and reading preferences" hidden>
+      <section class="controls" aria-live="polite">
+        <label for="font-size-select" class="control-label">Font size</label>
+        <select id="font-size-select" aria-describedby="font-size-desc" class="select-multiple">
+          <option value="14">Small</option>
+          <option value="16" selected>Normal</option>
+          <option value="18">Large</option>
+          <option value="20">Extra Large</option>
+        </select>
+        <span id="font-size-desc" class="sr-only">Choose font size for reading articles</span>
+
+        <label for="line-height-select" class="control-label">Line height</label>
+        <select id="line-height-select" aria-describedby="line-height-desc" class="select-multiple">
+          <option value="1.4">Normal</option>
+          <option value="1.6" selected>Comfortable</option>
+          <option value="1.8">Spacious</option>
+          <option value="2">Extra Spacious</option>
+        </select>
+        <span id="line-height-desc" class="sr-only">Choose line height for reading articles</span>
+      </section>
+    </div>
+
+    <!-- Breaking news notification banner -->
+    <div id="breaking-news-banner" class="breaking-news-banner" role="alert" aria-live="assertive" aria-atomic="true" hidden>
+      <span id="breaking-news-text">Breaking news: </span>
+      <button id="breaking-news-dismiss" aria-label="Dismiss breaking news notification" title="Dismiss notification" type="button">&times;</button>
+    </div>
+
+  </div>
+
+  <script>
+    (() => {
+      'use strict';
+
+      // Demo data
+      const demoArticles = [
+        {
+          id: 1,
+          title: "AI Agents Transform OSINT Investigations",
+          summary: "Artificial intelligence agents are revolutionizing how open-source intelligence is gathered, analyzed, and presented to professionals.",
+          content: "Full article content on AI agents transforming OSINT processes including examples, methodology, and future outlook.",
+          author: "Jane Doe",
+          source: "OpenIntel News",
+          publishedAt: "2024-06-20T10:00:00Z",
+          category: "Technology",
+          tags: ["AI", "OSINT", "Innovation"],
+          imageUrl: "https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/5a986218-57cc-449a-87ed-08e07237015f.png",
+          readTime: 7,
+          views: 15000,
+        },
+        {
+          id: 2,
+          title: "Global Cybersecurity Threats Increase in 2024",
+          summary: "A comprehensive report outlines rising cyber threats globally with implications for OSINT professionals.",
+          content: "Detailed analysis and preventative measures against the major cybersecurity threats expected this year.",
+          author: "John Smith",
+          source: "Cyber Daily",
+          publishedAt: "2024-06-19T09:30:00Z",
+          category: "Cybersecurity",
+          tags: ["Cybersecurity", "Threats", "2024"],
+          imageUrl: "https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/0014f199-ab3b-4814-8d97-a5c72883cd14.png",
+          readTime: 5,
+          views: 8900,
+        },
+        {
+          id: 3,
+          title: "OSINT Tools: Top Choices for Analysts",
+          summary: "An updated list of the most effective OSINT tools to help analysts streamline their investigations.",
+          content: "A full guide and review of popular OSINT tools, their strengths, weaknesses, pricing, and features.",
+          author: "Emily Zhang",
+          source: "OSINT Weekly",
+          publishedAt: "2024-06-18T08:45:00Z",
+          category: "Tools",
+          tags: ["Tools", "OSINT", "Analysis"],
+          imageUrl: "https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/1e2788e3-a1cc-46ff-b88b-c8458481d8a3.png",
+          readTime: 6,
+          views: 10300,
+        },
+        {
+          id: 4,
+          title: "Using AI for Real-Time OSINT Monitoring",
+          summary: "Learn how AI-driven platforms enable real-time monitoring and alerting of open-source intelligence.",
+          content: "Breakdown of AI monitoring systems for tracking critical data in security and intelligence.",
+          author: "David Liu",
+          source: "Intelligence Today",
+          publishedAt: "2024-06-16T14:00:00Z",
+          category: "Technology",
+          tags: ["AI", "Real-Time", "Monitoring"],
+          imageUrl: "https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/69f20689-a8bc-4b46-9bb0-61e62ac2aa2d.png",
+          readTime: 8,
+          views: 12600,
+        },
+        {
+          id: 5,
+          title: "OSINT Ethics and Privacy Concerns",
+          summary: "An exploration of ethical boundaries and privacy considerations in open-source intelligence gathering.",
+          content: "Expert opinions and guidelines for maintaining ethical standards in OSINT research.",
+          author: "Lisa Park",
+          source: "Ethical Intel",
+          publishedAt: "2024-06-15T13:00:00Z",
+          category: "Ethics",
+          tags: ["Ethics", "Privacy", "OSINT"],
+          imageUrl: "https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/2ccc1d4b-9fc1-4676-bbbe-4e2f891147c7.png",
+          readTime: 6,
+          views: 5400,
+        }        
+        // ... add more demo articles as needed for large testing
+      ];
+      const articlesPerPage = 5;
+
+      const demoCategories = [
+        { id: 'technology', name: 'Technology', color: '#0891b2', articleCount: 2, isSubscribed: true },
+        { id: 'cybersecurity', name: 'Cybersecurity', color: '#db2777', articleCount: 1, isSubscribed: false },
+        { id: 'tools', name: 'Tools', color: '#f97316', articleCount: 1, isSubscribed: true },
+        { id: 'ethics', name: 'Ethics', color: '#6366f1', articleCount: 1, isSubscribed: false },
+      ];
+
+      const trendingTopics = [
+        'AI', 'Cybersecurity', 'OSINT', 'Privacy', 'Open Source', 'Threat Analysis', 'Real-time Monitoring'
+      ];
+
+      // In-memory user data simulation
+      let bookmarks = []; // [{ articleId, folderId, bookmarkedAt, notes }]
+      let readingList = []; // [{ articleId, addedAt, progress, completedAt }]
+      let readingHistory = []; // [{ articleId, readAt, timeSpent, progress }]
+      const userPreferences = {
+        categories: ['technology', 'tools'],
+        sources: [],
+        fontSize: 16,
+        lineHeight: 1.6,
+        theme: 'light',
+        notifications: true,
+      };
+
+      // State for UI
+      let currentPage = 1;
+      let currentCategoryFilters = new Set(userPreferences.categories);
+      let searchQuery = '';
+      let isLoading = false;
+      let totalArticlesCount = demoArticles.length;
+
+      // Elements references
+      const $categoryList = document.getElementById('category-list');
+      const $trendingTopics = document.getElementById('trending-topics');
+      const $articlesFeed = document.getElementById('articles-feed');
+      const $loadingIndicator = document.getElementById('loading-indicator');
+
+      const $trendingArticles = document.getElementById('trending-articles');
+      const $bookmarksList = document.getElementById('bookmarks-list');
+      const $readingList = document.getElementById('reading-list');
+      const $darkModeToggle = document.getElementById('dark-mode-toggle');
+      const $fontSettingsToggle = document.getElementById('font-settings-toggle');
+      const $fontSettingsPanel = document.getElementById('font-settings-panel');
+      const $fontSizeSelect = document.getElementById('font-size-select');
+      const $lineHeightSelect = document.getElementById('line-height-select');
+      const $searchInput = document.getElementById('search-input');
+      const $breakingNewsBanner = document.getElementById('breaking-news-banner');
+      const $breakingNewsText = document.getElementById('breaking-news-text');
+      const $breakingNewsDismiss = document.getElementById('breaking-news-dismiss');
+      const $appContainer = document.getElementById('app');
+
+      // Accessibility helper
+      function setAriaPressed(el, pressed) {
+        if (pressed) el.setAttribute('aria-pressed', 'true');
+        else el.setAttribute('aria-pressed', 'false');
+      }
+
+      // Render categories list with multiple selection
+      function renderCategories() {
+        $categoryList.innerHTML = '';
+        demoCategories.forEach(cat => {
+          const selected = currentCategoryFilters.has(cat.id) ? 'selected' : '';
+          const li = document.createElement('li');
+          li.className = `category-item ${selected}`;
+          li.setAttribute('role', 'option');
+          li.setAttribute('aria-selected', currentCategoryFilters.has(cat.id) ? 'true' : 'false');
+          li.setAttribute('tabindex', 0);
+          li.style.borderColor = currentCategoryFilters.has(cat.id) ? cat.color : 'transparent';
+          li.style.color = currentCategoryFilters.has(cat.id) ? cat.color : '';
+          li.textContent = cat.name;
+          const countSpan = document.createElement('span');
+          countSpan.className = 'count';
+          countSpan.textContent = cat.articleCount;
+          li.appendChild(countSpan);
+          li.addEventListener('click', () => {
+            toggleCategoryFilter(cat.id);
+          });
+          li.addEventListener('keydown', e => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              toggleCategoryFilter(cat.id);
+            }
+          });
+          $categoryList.appendChild(li);
+        });
+      }
+
+      // Toggle category filter
+      function toggleCategoryFilter(categoryId) {
+        if (currentCategoryFilters.has(categoryId)) {
+          currentCategoryFilters.delete(categoryId);
+        } else {
+          currentCategoryFilters.add(categoryId);
+        }
+        renderCategories();
+        resetAndLoadArticles();
+      }
+
+      // Render trending topics
+      function renderTrendingTopics() {
+        $trendingTopics.innerHTML = '';
+        trendingTopics.forEach(topic => {
+          const li = document.createElement('li');
+          li.className = 'trend-item';
+          li.setAttribute('tabindex', 0);
+          li.textContent = topic;
+          li.addEventListener('click', () => {
+            $searchInput.value = topic;
+            triggerSearch(topic);
+          });
+          li.addEventListener('keydown', e => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              $searchInput.value = topic;
+              triggerSearch(topic);
+            }
+          });
+          $trendingTopics.appendChild(li);
+        });
+      }
+
+      // Render bookmarks
+      function renderBookmarks() {
+        $bookmarksList.innerHTML = '';
+        if (bookmarks.length === 0) {
+          $bookmarksList.textContent = 'No bookmarks yet.';
+          return;
+        }
+        bookmarks.forEach(bm => {
+          const article = demoArticles.find(a => a.id === bm.articleId);
+          if (!article) return;
+          const li = document.createElement('li');
+          li.className = 'bookmark-item';
+          li.setAttribute('tabindex', 0);
+          li.textContent = article.title.length > 45 ? article.title.substring(0, 42) + "..." : article.title;
+
+          li.addEventListener('click', () => {
+            openArticleModal(article);
+          });
+          li.dataset.articleId = article.id;
+
+          // Remove bookmark button
+          const removeBtn = document.createElement('button');
+          removeBtn.className = 'remove-btn';
+          removeBtn.setAttribute('aria-label', `Remove bookmark: ${article.title}`);
+          removeBtn.title = 'Remove bookmark';
+          removeBtn.innerHTML = '<span class="material-icons">delete</span>';
+          removeBtn.addEventListener('click', e => {
+            e.stopPropagation();
+            removeBookmark(article.id);
+          });
+
+          li.appendChild(removeBtn);
+          $bookmarksList.appendChild(li);
+        });
+      }
+
+      // Render reading list
+      function renderReadingList() {
+        $readingList.innerHTML = '';
+        if (readingList.length === 0) {
+          $readingList.textContent = 'No articles in reading list.';
+          return;
+        }
+        readingList.forEach(item => {
+          const article = demoArticles.find(a => a.id === item.articleId);
+          if (!article) return;
+
+          const li = document.createElement('li');
+          li.className = 'reading-list-item';
+          li.setAttribute('tabindex', 0);
+          li.textContent = article.title.length > 45 ? article.title.substring(0, 42) + "..." : article.title;
+
+          // Progress bar
+          const progressBar = document.createElement('div');
+          progressBar.className = 'progress-bar';
+          const progressInner = document.createElement('div');
+          progressInner.className = 'progress-bar-inner';
+          progressInner.style.width = (item.progress * 100).toFixed(0) + '%';
+          progressBar.appendChild(progressInner);
+          li.appendChild(progressBar);
+
+          // Remove button
+          const removeBtn = document.createElement('button');
+          removeBtn.className = 'remove-btn';
+          removeBtn.setAttribute('aria-label', `Remove from reading list: ${article.title}`);
+          removeBtn.title = 'Remove from reading list';
+          removeBtn.innerHTML = '<span class="material-icons">delete</span>';
+          removeBtn.addEventListener('click', e => {
+            e.stopPropagation();
+            removeFromReadingList(article.id);
+          });
+          li.appendChild(removeBtn);
+
+          li.addEventListener('click', () => openArticleModal(article));
+
+          $readingList.appendChild(li);
+        });
+      }
+
+      // Render trending articles (top by views)
+      function renderTrendingArticles() {
+        const trending = demoArticles
+          .slice()
+          .sort((a, b) => b.views - a.views)
+          .slice(0, 5);
+        $trendingArticles.innerHTML = '';
+        trending.forEach(article => {
+          const li = document.createElement('li');
+          li.className = 'trend-item';
+          li.setAttribute('tabindex', 0);
+          li.textContent = article.title.length > 65 
+            ? article.title.substring(0, 62) + "..." 
+            : article.title;
+          li.addEventListener('click', () => openArticleModal(article));
+          li.addEventListener('keydown', e => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              openArticleModal(article);
+            }
+          });
+          $trendingArticles.appendChild(li);
+        });
+      }
+
+      // Article card creation helper
+      function createArticleCard(article) {
+        const articleCard = document.createElement('article');
+        articleCard.className = 'article-card';
+        articleCard.setAttribute('tabindex', 0);
+        articleCard.setAttribute('role', 'listitem');
+        articleCard.dataset.articleId = article.id;
+
+        // Cover image container and img
+        const imgContainer = document.createElement('div');
+        imgContainer.className = 'article-image-container';
+        const img = document.createElement('img');
+        img.setAttribute('alt', article.title + ' - Featured image');
+        img.setAttribute('src', article.imageUrl);
+        img.loading = 'lazy';
+        img.addEventListener('load', () => {
+          img.classList.add('loaded');
+        });
+        imgContainer.appendChild(img);
+        articleCard.appendChild(imgContainer);
+
+        // Content container
+        const content = document.createElement('div');
+        content.className = 'article-content';
+
+        // Category chip
+        const categoryChip = document.createElement('div');
+        categoryChip.className = 'category-chip';
+        categoryChip.textContent = article.category;
+        content.appendChild(categoryChip);
+
+        // Title
+        const title = document.createElement('h2');
+        title.className = 'article-title';
+        title.textContent = article.title;
+        content.appendChild(title);
+
+        // Summary
+        const summary = document.createElement('p');
+        summary.className = 'article-summary';
+        summary.textContent = article.summary;
+        content.appendChild(summary);
+
+        // Meta info (author, date, readtime)
+        const meta = document.createElement('div');
+        meta.className = 'article-meta';
+
+        const authorSpan = document.createElement('span');
+        authorSpan.innerHTML = `<span class="material-icons" aria-hidden="true">person</span>${article.author}`;
+        meta.appendChild(authorSpan);
+
+        const dateSpan = document.createElement('span');
+        const dateObj = new Date(article.publishedAt);
+        dateSpan.innerHTML = `<span class="material-icons" aria-hidden="true">calendar_today</span>${dateObj.toLocaleDateString()}`;
+        meta.appendChild(dateSpan);
+
+        const readTimeSpan = document.createElement('span');
+        readTimeSpan.innerHTML = `<span class="material-icons" aria-hidden="true">schedule</span>${article.readTime} min read`;
+        meta.appendChild(readTimeSpan);
+
+        content.appendChild(meta);
+
+        articleCard.appendChild(content);
+
+        // Bookmark button
+        const bookmarkBtn = document.createElement('button');
+        bookmarkBtn.className = 'bookmark-btn';
+        bookmarkBtn.setAttribute('aria-label', 'Bookmark article');
+        bookmarkBtn.title = 'Bookmark article';
+        bookmarkBtn.innerHTML = '<span class="material-icons" aria-hidden="true">bookmark_border</span>';
+        if (isArticleBookmarked(article.id)) {
+          bookmarkBtn.classList.add('bookmarked');
+          bookmarkBtn.innerHTML = '<span class="material-icons" aria-hidden="true">bookmark</span>';
+          bookmarkBtn.setAttribute('aria-label', 'Remove bookmark');
+          bookmarkBtn.title = 'Remove bookmark';
+        }
+        bookmarkBtn.addEventListener('click', e => {
+          e.stopPropagation();
+          toggleBookmark(article.id, bookmarkBtn);
+        });
+        articleCard.appendChild(bookmarkBtn);
+
+        // Click open full article modal
+        articleCard.addEventListener('click', () => openArticleModal(article));
+        articleCard.addEventListener('keydown', e => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            openArticleModal(article);
+          }
+        });
+
+        return articleCard;
+      }
+
+      // Check if article is bookmarked
+      function isArticleBookmarked(articleId) {
+        return bookmarks.some(bm => bm.articleId === articleId);
+      }
+
+      // Toggle bookmark
+      function toggleBookmark(articleId, button) {
+        if (isArticleBookmarked(articleId)) {
+          bookmarks = bookmarks.filter(bm => bm.articleId !== articleId);
+          button.classList.remove('bookmarked');
+          button.innerHTML = '<span class="material-icons" aria-hidden="true">bookmark_border</span>';
+          button.setAttribute('aria-label', 'Bookmark article');
+          button.title = 'Bookmark article';
+        } else {
+          bookmarks.push({ articleId, folderId: null, bookmarkedAt: new Date().toISOString(), notes: '' });
+          button.classList.add('bookmarked');
+          button.innerHTML = '<span class="material-icons" aria-hidden="true">bookmark</span>';
+          button.setAttribute('aria-label', 'Remove bookmark');
+          button.title = 'Remove bookmark';
+        }
+        renderBookmarks();
+      }
+
+      // Remove bookmark
+      function removeBookmark(articleId) {
+        bookmarks = bookmarks.filter(bm => bm.articleId !== articleId);
+        renderBookmarks();
+        // Also update article card buttons
+        document.querySelectorAll(`.article-card[data-article-id="${articleId}"] .bookmark-btn`).forEach(btn => {
+          btn.classList.remove('bookmarked');
+          btn.innerHTML = '<span class="material-icons" aria-hidden="true">bookmark_border</span>';
+          btn.setAttribute('aria-label', 'Bookmark article');
+          btn.title = 'Bookmark article';
+        });
+      }
+
+      // Add article to reading list
+      function addToReadingList(articleId) {
+        if (!readingList.some(item => item.articleId === articleId)) {
+          readingList.push({ articleId, addedAt: new Date().toISOString(), progress: 0, completedAt: null });
+          renderReadingList();
+        }
+      }
+
+      // Remove from reading list
+      function removeFromReadingList(articleId) {
+        readingList = readingList.filter(item => item.articleId !== articleId);
+        renderReadingList();
+      }
+
+      // Reset articles feed and reload first page
+      function resetAndLoadArticles() {
+        currentPage = 1;
+        $articlesFeed.innerHTML = '';
+        loadMoreArticles();
+      }
+
+      // Filtering, searching, and pagination function
+      function fetchArticles(page = 1) {
+        return new Promise((resolve) => {
+          setTimeout(() => {
+            let filtered = demoArticles;
+
+            // Filter by selected categories if any, else all
+            if (currentCategoryFilters.size > 0) {
+              filtered = filtered.filter(art => currentCategoryFilters.has(art.category.toLowerCase()));
+            }
+
+            // Search filtering (title, summary, tags)
+            if (searchQuery.trim().length > 0) {
+              const sq = searchQuery.trim().toLowerCase();
+              filtered = filtered.filter(art =>
+                art.title.toLowerCase().includes(sq) ||
+                art.summary.toLowerCase().includes(sq) ||
+                art.tags.some(tag => tag.toLowerCase().includes(sq)) ||
+                art.content.toLowerCase().includes(sq)
+              );
+            }
+
+            const start = (page - 1) * articlesPerPage;
+            const end = page * articlesPerPage;
+            const pageItems = filtered.slice(start, end);
+            resolve({ results: pageItems, total: filtered.length });
+          }, 600);
+        });
+      }
+
+      // Load and append articles with skeleton loading
+      async function loadMoreArticles() {
+        if (isLoading) return;
+        isLoading = true;
+        $loadingIndicator.style.display = 'block';
+
+        const { results, total } = await fetchArticles(currentPage);
+        totalArticlesCount = total;
+
+        if (currentPage === 1) $articlesFeed.innerHTML = '';
+
+        if (results.length === 0 && currentPage === 1) {
+          $articlesFeed.innerHTML = `<p style="color: var(--text-secondary); font-weight: 700;">No articles found.</p>`;
+          $loadingIndicator.style.display = 'none';
+          isLoading = false;
+          return;
+        }
+
+        results.forEach(article => {
+          const card = createArticleCard(article);
+          $articlesFeed.appendChild(card);
+        });
+
+        currentPage++;
+        isLoading = false;
+        $loadingIndicator.style.display = 'none';
+      }
+
+      // Search trigger
+      function triggerSearch(value) {
+        searchQuery = value;
+        currentPage = 1;
+        loadMoreArticles();
+      }
+
+      // Debounced search handler
+      let searchTimeout = null;
+      $searchInput.addEventListener('input', e => {
+        clearTimeout(searchTimeout);
+        const val = e.target.value;
+        searchTimeout = setTimeout(() => {
+          triggerSearch(val);
+        }, 350);
+      });
+
+      // Infinite scroll implementation for main content
+      const mainContent = document.getElementById('main-content');
+      mainContent.addEventListener('scroll', () => {
+        const scrollBottom = mainContent.scrollHeight - mainContent.scrollTop - mainContent.clientHeight;
+        if (scrollBottom < 120 && !isLoading && ($articlesFeed.children.length < totalArticlesCount)) {
+          loadMoreArticles();
+        }
+      });
+
+      // Open article modal (simulate full article reading)
+      // For demo purposes, we'll create a modal-like overlay to read full article
+      let articleModal = null;
+      function openArticleModal(article) {
+        if (articleModal) return; // only one modal at a time
+
+        const modal = document.createElement('div');
+        modal.setAttribute('role', 'dialog');
+        modal.setAttribute('aria-modal', 'true');
+        modal.setAttribute('aria-label', 'Article detail view');
+        modal.className = 'article-modal';
+
+        // Styles
+        modal.style.position = 'fixed';
+        modal.style.top = 0;
+        modal.style.left = 0;
+        modal.style.width = '100vw';
+        modal.style.height = '100vh';
+        modal.style.backgroundColor = 'rgba(0,0,0,0.7)';
+        modal.style.zIndex = 200;
+        modal.style.overflow = 'auto';
+        modal.style.display = 'flex';
+        modal.style.justifyContent = 'center';
+        modal.style.alignItems = 'center';
+        modal.style.padding = '24px';
+
+        const articleBox = document.createElement('article');
+        articleBox.style.backgroundColor = getComputedStyle(document.documentElement).getPropertyValue('--card-bg').trim();
+        articleBox.style.borderRadius = '16px';
+        articleBox.style.maxWidth = '800px';
+        articleBox.style.width = '100%';
+        articleBox.style.maxHeight = '90vh';
+        articleBox.style.padding = '24px 32px';
+        articleBox.style.position = 'relative';
+        articleBox.style.display = 'flex';
+        articleBox.style.flexDirection = 'column';
+
+        // Close button
+        const closeBtn = document.createElement('button');
+        closeBtn.setAttribute('aria-label', 'Close article');
+        closeBtn.title = 'Close article';
+        closeBtn.style.position = 'absolute';
+        closeBtn.style.top = '16px';
+        closeBtn.style.right = '16px';
+        closeBtn.style.background = 'transparent';
+        closeBtn.style.border = 'none';
+        closeBtn.style.fontSize = '1.8rem';
+        closeBtn.style.cursor = 'pointer';
+        closeBtn.style.color = getComputedStyle(document.documentElement).getPropertyValue('--text-primary').trim();
+        closeBtn.innerHTML = '&times;';
+        closeBtn.addEventListener('click', closeArticleModal);
+        articleBox.appendChild(closeBtn);
+
+        // Title
+        const titleH1 = document.createElement('h1');
+        titleH1.textContent = article.title;
+        titleH1.style.marginBottom = '16px';
+        articleBox.appendChild(titleH1);
+
+        // Author and date
+        const metaDiv = document.createElement('div');
+        metaDiv.style.color = getComputedStyle(document.documentElement).getPropertyValue('--text-secondary').trim();
+        metaDiv.style.fontSize = '0.9rem';
+        metaDiv.style.marginBottom = '24px';
+        metaDiv.textContent = `by ${article.author} | ${new Date(article.publishedAt).toLocaleDateString()} | Source: ${article.source}`;
+        articleBox.appendChild(metaDiv);
+
+        // Image
+        const img = document.createElement('img');
+        img.setAttribute('src', article.imageUrl);
+        img.setAttribute('alt', article.title + ' - full article image');
+        img.style.borderRadius = '12px';
+        img.style.marginBottom = '24px';
+        articleBox.appendChild(img);
+
+        // Content paragraph (simulate with paragraphs)
+        const contentP = document.createElement('p');
+        contentP.style.whiteSpace = 'pre-wrap';
+        contentP.textContent = article.content;
+        contentP.style.flexGrow = '1';
+        articleBox.appendChild(contentP);
+
+        // Controls for reading progress, TTS, add to reading list
+        const controlsDiv = document.createElement('div');
+        controlsDiv.style.marginTop = '24px';
+        controlsDiv.style.display = 'flex';
+        controlsDiv.style.justifyContent = 'space-between';
+        controlsDiv.style.alignItems = 'center';
+
+        // Reading progress
+        const progressLabel = document.createElement('label');
+        progressLabel.textContent = 'Reading progress:';
+        const progressInput = document.createElement('input');
+        progressInput.type = 'range';
+        progressInput.min = '0';
+        progressInput.max = '100';
+        progressInput.value = '0';
+        progressInput.style.width = '160px';
+        progressInput.setAttribute('aria-label', 'Reading progress slider');
+        progressInput.addEventListener('input', () => {
+          currentReadingProgress = Number(progressInput.value) / 100;
+          progressText.textContent = `${progressInput.value}%`;
+        });
+        const progressText = document.createElement('span');
+        progressText.textContent = '0%';
+        progressText.style.marginLeft = '8px';
+
+        const progressContainer = document.createElement('div');
+        progressContainer.style.display = 'flex';
+        progressContainer.style.alignItems = 'center';
+        progressContainer.appendChild(progressInput);
+        progressContainer.appendChild(progressText);
+
+        const progressWrapper = document.createElement('div');
+        progressWrapper.style.display = 'flex';
+        progressWrapper.style.flexDirection = 'column';
+        progressWrapper.appendChild(progressLabel);
+        progressWrapper.appendChild(progressContainer);
+
+        // Add to reading list button
+        const addToReadingListBtn = document.createElement('button');
+        addToReadingListBtn.textContent = readingList.some(item => item.articleId === article.id) ? 'In Reading List' : 'Add to Reading List';
+        addToReadingListBtn.disabled = readingList.some(item => item.articleId === article.id);
+        addToReadingListBtn.setAttribute('aria-label', 'Add article to reading list');
+        addToReadingListBtn.addEventListener('click', () => {
+          addToReadingList(article.id);
+          addToReadingListBtn.textContent = 'In Reading List';
+          addToReadingListBtn.disabled = true;
+          renderReadingList();
+        });
+
+        // Text to speech simulation toggle
+        const ttsBtn = document.createElement('button');
+        ttsBtn.textContent = 'Text-to-Speech ▶️';
+        ttsBtn.setAttribute('aria-pressed', 'false');
+        ttsBtn.addEventListener('click', () => {
+          if (ttsBtn.getAttribute('aria-pressed') === 'true') {
+            stopTextToSpeech();
+            ttsBtn.textContent = 'Text-to-Speech ▶️';
+            ttsBtn.setAttribute('aria-pressed', 'false');
+          } else {
+            startTextToSpeech(article.content);
+            ttsBtn.textContent = 'Stop Text-to-Speech ◼️';
+            ttsBtn.setAttribute('aria-pressed', 'true');
+          }
+        });
+
+        controlsDiv.appendChild(progressWrapper);
+        controlsDiv.appendChild(addToReadingListBtn);
+        controlsDiv.appendChild(ttsBtn);
+
+        articleBox.appendChild(controlsDiv);
+
+        // Comments system panel
+        const commentsContainer = document.createElement('section');
+        commentsContainer.setAttribute('aria-label', 'Article comments');
+        commentsContainer.className = 'comments-section';
+
+        const commentsTitle = document.createElement('h3');
+        commentsTitle.textContent = 'Comments';
+        commentsContainer.appendChild(commentsTitle);
+
+        const commentsList = document.createElement('div');
+        commentsList.id = 'comments-list';
+        commentsContainer.appendChild(commentsList);
+
+        // Comment input form
+        const commentForm = document.createElement('form');
+        commentForm.style.marginTop = '12px';
+        commentForm.setAttribute('aria-label', 'Add new comment');
+
+        const commentInput = document.createElement('textarea');
+        commentInput.rows = 3;
+        commentInput.minLength = 2;
+        commentInput.placeholder = 'Write your comment here...';
+        commentInput.setAttribute('aria-required', 'true');
+        commentInput.style.width = '100%';
+        commentInput.style.padding = '8px';
+        commentInput.style.borderRadius = '8px';
+        commentInput.style.border = '1px solid var(--bg-secondary)';
+        commentInput.style.resize = 'vertical';
+        commentForm.appendChild(commentInput);
+
+        const commentSubmitBtn = document.createElement('button');
+        commentSubmitBtn.type = 'submit';
+        commentSubmitBtn.textContent = 'Add Comment';
+        commentSubmitBtn.style.marginTop = '8px';
+        commentSubmitBtn.style.padding = '6px 12px';
+        commentSubmitBtn.style.borderRadius = '8px';
+        commentSubmitBtn.style.backgroundColor = 'var(--accent-color)';
+        commentSubmitBtn.style.color = 'white';
+        commentSubmitBtn.style.fontWeight = 'bold';
+        commentSubmitBtn.style.border = 'none';
+        commentSubmitBtn.style.cursor = 'pointer';
+
+        commentSubmitBtn.addEventListener('mouseover', () => {
+          commentSubmitBtn.style.backgroundColor = 'var(--accent-color-hover)';
+        });
+        commentSubmitBtn.addEventListener('mouseout', () => {
+          commentSubmitBtn.style.backgroundColor = 'var(--accent-color)';
+        });
+        commentForm.appendChild(commentSubmitBtn);
+
+        commentsContainer.appendChild(commentForm);
+
+        // Comments data store in memory
+        const commentsKey = `comments-article-${article.id}`;
+        let commentsData = JSON.parse(localStorage.getItem(commentsKey) || '[]');
+
+        // Helper to render comments
+        function renderComments() {
+          commentsList.innerHTML = '';
+          if (commentsData.length === 0) {
+            commentsList.textContent = 'No comments yet.';
+            return;
+          }
+          commentsData.forEach((comment, idx) => {
+            const commentDiv = document.createElement('div');
+            commentDiv.className = 'comment-item';
+
+            const authorSpan = document.createElement('span');
+            authorSpan.className = 'comment-author';
+            authorSpan.textContent = comment.author || 'Anonymous';
+            commentDiv.appendChild(authorSpan);
+
+            const textP = document.createElement('p');
+            textP.className = 'comment-text';
+            textP.textContent = comment.text;
+            commentDiv.appendChild(textP);
+
+            const dateSpan = document.createElement('span');
+            dateSpan.className = 'comment-date';
+            dateSpan.textContent = new Date(comment.date).toLocaleString();
+            commentDiv.appendChild(dateSpan);
+
+            // Moderation buttons (only for demo, all comments removable)
+            const actionsDiv = document.createElement('div');
+            actionsDiv.className = 'comment-actions';
+
+            const deleteBtn = document.createElement('button');
+            deleteBtn.className = 'comment-btn';
+            deleteBtn.textContent = 'Delete';
+            deleteBtn.addEventListener('click', () => {
+              commentsData.splice(idx, 1);
+              localStorage.setItem(commentsKey, JSON.stringify(commentsData));
+              renderComments();
+            });
+            actionsDiv.appendChild(deleteBtn);
+
+            commentDiv.appendChild(actionsDiv);
+
+            commentsList.appendChild(commentDiv);
+          });
+        }
+
+        renderComments();
+
+        // Submit handler for new comments
+        commentForm.addEventListener('submit', e => {
+          e.preventDefault();
+          if (!commentInput.value.trim()) return;
+          const newComment = {
+            author: 'User',
+            text: commentInput.value.trim(),
+            date: new Date().toISOString(),
+          };
+          commentsData.push(newComment);
+          localStorage.setItem(commentsKey, JSON.stringify(commentsData));
+          commentInput.value = '';
+          renderComments();
+        });
+
+        articleBox.appendChild(commentsContainer);
+
+        modal.appendChild(articleBox);
+        document.body.appendChild(modal);
+        articleModal = modal;
+
+        // Focus trap and close on ESC
+        modal.tabIndex = -1;
+        modal.focus();
+
+        function trapFocus(e) {
+          if (!modal.contains(e.target)) {
+            e.stopPropagation();
+            modal.focus();
+          }
+        }
+        document.addEventListener('focus', trapFocus, true);
+
+        window.addEventListener('keydown', escClose);
+
+        function escClose(e) {
+          if (e.key === 'Escape' || e.key === 'Esc') {
+            closeArticleModal();
+          }
+        }
+
+        // Current reading progress state
+        let currentReadingProgress = 0;
+
+        // Text to speech simulation (basic)
+        let ttsSynth = window.speechSynthesis;
+        let ttsUtterance = null;
+        function startTextToSpeech(text) {
+          if (!ttsSynth) return;
+          stopTextToSpeech();
+          ttsUtterance = new SpeechSynthesisUtterance(text);
+          ttsSynth.speak(ttsUtterance);
+        }
+        function stopTextToSpeech() {
+          if (!ttsSynth) return;
+          ttsSynth.cancel();
+          ttsUtterance = null;
+        }
+
+        modal.addEventListener('click', event => {
+          if (event.target === modal) closeArticleModal();
+        });
+
+        function closeArticleModal() {
+          if (articleModal) {
+            stopTextToSpeech();
+            window.removeEventListener('keydown', escClose);
+            document.removeEventListener('focus', trapFocus, true);
+            articleModal.remove();
+            articleModal = null;
+          }
+        }
+      }
+
+      // Dark mode toggle persistence and UI update
+      function toggleDarkMode() {
+        const currentTheme = $appContainer.getAttribute('data-theme');
+        const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+        $appContainer.setAttribute('data-theme', newTheme);
+        userPreferences.theme = newTheme;
+        localStorage.setItem('userPreferences', JSON.stringify(userPreferences));
+        setAriaPressed($darkModeToggle, newTheme === 'dark');
+        updateDarkModeIcon(newTheme);
+      }
+      function updateDarkModeIcon(theme) {
+        if (theme === 'dark') {
+          $darkModeToggle.innerHTML = '<span class="material-icons" aria-hidden="true">light_mode</span>';
+        } else {
+          $darkModeToggle.innerHTML = '<span class="material-icons" aria-hidden="true">dark_mode</span>';
+        }
+      }
+      $darkModeToggle.addEventListener('click', toggleDarkMode);
+      setAriaPressed($darkModeToggle, false);
+
+      // Font size and line height from user preferences
+      function applyFontSettings() {
+        document.documentElement.style.fontSize = userPreferences.fontSize + 'px';
+        document.documentElement.style.lineHeight = userPreferences.lineHeight;
+        $fontSizeSelect.value = userPreferences.fontSize;
+        $lineHeightSelect.value = userPreferences.lineHeight;
+      }
+      $fontSizeSelect.addEventListener('change', (e) => {
+        const val = parseInt(e.target.value, 10);
+        userPreferences.fontSize = val;
+        localStorage.setItem('userPreferences', JSON.stringify(userPreferences));
+        applyFontSettings();
+      });
+      $lineHeightSelect.addEventListener('change', (e) => {
+        const val = parseFloat(e.target.value);
+        userPreferences.lineHeight = val;
+        localStorage.setItem('userPreferences', JSON.stringify(userPreferences));
+        applyFontSettings();
+      });
+
+      // Toggle font panel visibility
+      $fontSettingsToggle.addEventListener('click', () => {
+        if ($fontSettingsPanel.hasAttribute('hidden')) {
+          $fontSettingsPanel.removeAttribute('hidden');
+          $fontSettingsToggle.setAttribute('aria-expanded', 'true');
+          $fontSettingsPanel.focus();
+        } else {
+          $fontSettingsPanel.setAttribute('hidden', '');
+          $fontSettingsToggle.setAttribute('aria-expanded', 'false');
+          $fontSettingsToggle.focus();
+        }
+      });
+
+      // Remove focus from font panel on outside click or ESC
+      $fontSettingsPanel.addEventListener('keydown', e => {
+        if (e.key === 'Escape' || e.key === 'Esc') {
+          $fontSettingsPanel.setAttribute('hidden', '');
+          $fontSettingsToggle.setAttribute('aria-expanded', 'false');
+          $fontSettingsToggle.focus();
+        }
+      });
+      document.body.addEventListener('click', e => {
+        if (!$fontSettingsPanel.contains(e.target) && e.target !== $fontSettingsToggle) {
+          if (!$fontSettingsPanel.hasAttribute('hidden')) {
+            $fontSettingsPanel.setAttribute('hidden', '');
+            $fontSettingsToggle.setAttribute('aria-expanded', 'false');
+          }
+        }
+      });
+
+      // Initialize theme and font settings from localStorage if available
+      function loadUserPreferences() {
+        try {
+          const savedPrefs = JSON.parse(localStorage.getItem('userPreferences'));
+          if (savedPrefs) {
+            Object.assign(userPreferences, savedPrefs);
+          }
+        } catch (e) {
+          // ignore malformed json
+        }
+      }
+
+      // Init
+      function init() {
+        loadUserPreferences();
+        $appContainer.setAttribute('data-theme', userPreferences.theme);
+        updateDarkModeIcon(userPreferences.theme);
+        setAriaPressed($darkModeToggle, userPreferences.theme === 'dark');
+        applyFontSettings();
+        renderCategories();
+        renderTrendingTopics();
+        renderBookmarks();
+        renderReadingList();
+        renderTrendingArticles();
+        resetAndLoadArticles();
+
+        // Initialize search input with empty
+        $searchInput.value = '';
+
+        // Breaking news simulation: every 60s simulate a breaking news notification
+        setInterval(simulateBreakingNews, 60000);
+      }
+
+      // Simulate breaking news notifications
+      function simulateBreakingNews() {
+        if (!userPreferences.notifications) return;
+
+        const breakingArticle = demoArticles[Math.floor(Math.random() * demoArticles.length)];
+        if (!breakingArticle) return;
+
+        $breakingNewsText.textContent = 'Breaking news: ' + breakingArticle.title;
+        $breakingNewsBanner.removeAttribute('hidden');
+        $breakingNewsBanner.classList.add('show');
+
+        // Dismiss after 20 seconds automatically
+        setTimeout(() => {
+          $breakingNewsBanner.classList.remove('show');
+          setTimeout(() => $breakingNewsBanner.setAttribute('hidden', ''), 300);
+        }, 20000);
+      }
+      $breakingNewsDismiss.addEventListener('click', () => {
+        $breakingNewsBanner.classList.remove('show');
+        setTimeout(() => $breakingNewsBanner.setAttribute('hidden', ''), 300);
+      });
+
+      // Keyboard navigation on categories and trending topics (aria support)
+      $categoryList.addEventListener('keydown', e => {
+        const focusableItems = Array.from($categoryList.querySelectorAll('.category-item'));
+        let index = focusableItems.indexOf(document.activeElement);
+        if (index === -1) return;
+        if (e.key === 'ArrowDown') {
+          e.preventDefault();
+          index = (index + 1) % focusableItems.length;
+          focusableItems[index].focus();
+        } else if (e.key === 'ArrowUp') {
+          e.preventDefault();
+          index = (index - 1 + focusableItems.length) % focusableItems.length;
+          focusableItems[index].focus();
+        }
+      });
+
+      $trendingTopics.addEventListener('keydown', e => {
+        const items = Array.from($trendingTopics.querySelectorAll('.trend-item'));
+        let index = items.indexOf(document.activeElement);
+        if (index === -1) return;
+        if (e.key === 'ArrowDown') {
+          e.preventDefault();
+          index = (index + 1) % items.length;
+          items[index].focus();
+        } else if (e.key === 'ArrowUp') {
+          e.preventDefault();
+          index = (index - 1 + items.length) % items.length;
+          items[index].focus();
+        }
+      });
+
+      // Start app on DOM ready
+      document.addEventListener('DOMContentLoaded', init);
+    })();
+  </script>
+</body>
+</html>
+
 
