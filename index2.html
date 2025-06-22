@@ -1,1 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Global Security Insights | Safer Business Travel</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary: #1a365d;
+            --secondary: #2c5282;
+            --accent: #4299e1;
+            --danger: #e53e3e;
+            --warning: #dd6b20;
+            --safe: #38a169;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            scroll-behavior: smooth;
+        }
+        
+        .map-container {
+            height: 500px;
+            background-image: url('https://mapsvg.com/static/maps/geo-world-map.svg');
+            background-size: cover;
+            position: relative;
+        }
+        
+        .threat-marker {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            position: absolute;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .threat-marker:hover {
+            transform: scale(1.5);
+        }
+        
+        .critical { background-color: #e53e3e; }
+        .high { background-color: #dd6b20; }
+        .medium { background-color: #d69e2e; }
+        .low { background-color: #38a169; }
+        
+        .alert-feed {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .alert-critical { border-left: 4px solid #e53e3e; }
+        .alert-high { border-left: 4px solid #dd6b20; }
+        .alert-medium { border-left: 4px solid #d69e2e; }
+        .alert-low { border-left: 4px solid #38a169; }
+        
+        .security-profile {
+            transition: all 0.3s;
+        }
+        
+        .security-profile:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+        
+        .tool-card {
+            transition: all 0.3s;
+        }
+        
+        .tool-card:hover {
+            transform: scale(1.05);
+        }
+        
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 0.6; }
+            50% { opacity: 1; }
+            100% { opacity: 0.6; }
+        }
+        
+        .live-pulse {
+            animation: pulse 2s infinite;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Navigation -->
+    <nav class="bg-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0 flex items-center">
+                        <i class="fas fa-shield-alt text-blue-600 text-2xl mr-2"></i>
+                        <span class="text-xl font-bold text-gray-900">GlobalSec</span>
+                    </div>
+                    <div class="hidden sm:ml-6 sm:flex sm:space-x-8">
+                        <a href="#home" class="border-blue-500 text-gray-900 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">Home</a>
+                        <a href="#threat-map" class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">Threat Map</a>
+                        <a href="#profiles" class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">Country Profiles</a>
+                        <a href="#alerts" class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">Alerts</a>
+                        <a href="#tools" class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">Tools</a>
+                    </div>
+                </div>
+                <div class="hidden sm:ml-6 sm:flex sm:items-center">
+                    <button class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium">Corporate Login</button>
+                </div>
+            </div>
+        </div>
+    </nav>
 
+    <!-- Hero Section -->
+    <section id="home" class="bg-gradient-to-r from-blue-800 to-blue-600 text-white py-20">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="lg:grid lg:grid-cols-12 lg:gap-8">
+                <div class="sm:text-center md:max-w-2xl md:mx-auto lg:col-span-6 lg:text-left">
+                    <h1 class="text-4xl tracking-tight font-extrabold sm:text-5xl md:text-6xl">
+                        <span class="block">Global Security Insights</span>
+                        <span class="block text-blue-200">for Safer Business Travel</span>
+                    </h1>
+                    <p class="mt-3 text-base text-blue-100 sm:mt-5 sm:text-lg sm:max-w-xl sm:mx-auto md:mt-5 md:text-xl lg:mx-0">
+                        Real-time threat intelligence and risk management for corporate travelers worldwide.
+                    </p>
+                    <div class="mt-8 sm:flex sm:justify-center lg:justify-start">
+                        <div class="rounded-md shadow">
+                            <a href="#threat-map" class="w-full flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-blue-700 bg-white hover:bg-gray-50 md:py-4 md:text-lg md:px-10">
+                                Explore Threats
+                            </a>
+                        </div>
+                        <div class="mt-3 sm:mt-0 sm:ml-3">
+                            <a href="#" class="w-full flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-white bg-blue-700 hover:bg-blue-800 md:py-4 md:text-lg md:px-10">
+                                Request Demo
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-12 relative sm:max-w-lg sm:mx-auto lg:mt-0 lg:max-w-none lg:mx-0 lg:col-span-6 lg:flex lg:items-center">
+                    <div class="relative mx-auto w-full rounded-lg shadow-lg lg:max-w-md">
+                        <div class="bg-white p-6 rounded-lg shadow-xl">
+                            <h3 class="text-lg font-medium text-gray-900 mb-4">Current Global Alerts</h3>
+                            <div class="space-y-4">
+                                <div class="flex items-start">
+                                    <div class="flex-shrink-0">
+                                        <div class="h-5 w-5 rounded-full bg-red-500"></div>
+                                    </div>
+                                    <div class="ml-3">
+                                        <p class="text-sm font-medium text-gray-900">France - Civil Unrest</p>
+                                        <p class="text-sm text-gray-500">Increased protests in Paris, avoid city center</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-start">
+                                    <div class="flex-shrink-0">
+                                        <div class="h-5 w-5 rounded-full bg-orange-500"></div>
+                                    </div>
+                                    <div class="ml-3">
+                                        <p class="text-sm font-medium text-gray-900">Thailand - Political Tensions</p>
+                                        <p class="text-sm text-gray-500">Possible demonstrations in Bangkok</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-start">
+                                    <div class="flex-shrink-0">
+                                        <div class="h-5 w-5 rounded-full bg-yellow-500"></div>
+                                    </div>
+                                    <div class="ml-3">
+                                        <p class="text-sm font-medium text-gray-900">Brazil - Cyber Threats</p>
+                                        <p class="text-sm text-gray-500">Increased phishing targeting corporate travelers</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mt-6">
+                                <a href="#alerts" class="text-sm font-medium text-blue-600 hover:text-blue-500">View all alerts →</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Quick Access Section -->
+    <section class="bg-white py-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="lg:text-center">
+                <h2 class="text-base text-blue-600 font-semibold tracking-wide uppercase">Quick Access</h2>
+                <p class="mt-2 text-3xl leading-8 font-extrabold tracking-tight text-gray-900 sm:text-4xl">
+                    Global Security at a Glance
+                </p>
+            </div>
+            <div class="mt-10">
+                <div class="grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-3">
+                    <div class="bg-gray-50 p-6 rounded-lg shadow">
+                        <div class="flex items-center">
+                            <div class="flex-shrink-0 bg-blue-500 rounded-md p-3">
+                                <i class="fas fa-exclamation-triangle text-white"></i>
+                            </div>
+                            <div class="ml-5">
+                                <h3 class="text-lg font-medium text-gray-900">Current Alerts</h3>
+                                <p class="mt-1 text-sm text-gray-500">Real-time security incidents worldwide</p>
+                            </div>
+                        </div>
+                        <div class="mt-6">
+                            <a href="#alerts" class="text-sm font-medium text-blue-600 hover:text-blue-500">View alerts →</a>
+                        </div>
+                    </div>
+                    <div class="bg-gray-50 p-6 rounded-lg shadow">
+                        <div class="flex items-center">
+                            <div class="flex-shrink-0 bg-red-500 rounded-md p-3">
+                                <i class="fas fa-globe-americas text-white"></i>
+                            </div>
+                            <div class="ml-5">
+                                <h3 class="text-lg font-medium text-gray-900">High-Risk Regions</h3>
+                                <p class="mt-1 text-sm text-gray-500">Areas with elevated threat levels</p>
+                            </div>
+                        </div>
+                        <div class="mt-6">
+                            <a href="#threat-map" class="text-sm font-medium text-blue-600 hover:text-blue-500">Explore map →</a>
+                        </div>
+                    </div>
+                    <div class="bg-gray-50 p-6 rounded-lg shadow">
+                        <div class="flex items-center">
+                            <div class="flex-shrink-0 bg-green-500 rounded-md p-3">
+                                <i class="fas fa-user-shield text-white"></i>
+                            </div>
+                            <div class="ml-5">
+                                <h3 class="text-lg font-medium text-gray-900">Corporate Portal</h3>
+                                <p class="mt-1 text-sm text-gray-500">Secure access for your organization</p>
+                            </div>
+                        </div>
+                        <div class="mt-6">
+                            <a href="#" class="text-sm font-medium text-blue-600 hover:text-blue-500">Login →</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Threat Intelligence Map -->
+    <section id="threat-map" class="py-12 bg-gray-100">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="lg:text-center">
+                <h2 class="text-base text-blue-600 font-semibold tracking-wide uppercase">Threat Intelligence</h2>
+                <p class="mt-2 text-3xl leading-8 font-extrabold tracking-tight text-gray-900 sm:text-4xl">
+                    Interactive Global Threat Map
+                </p>
+                <p class="mt-4 max-w-2xl text-xl text-gray-500 lg:mx-auto">
+                    Real-time visualization of security threats worldwide
+                </p>
+            </div>
+            <div class="mt-10">
+                <div class="bg-white p-6 rounded-lg shadow-xl">
+                    <div class="flex flex-wrap mb-4">
+                        <div class="mr-4 mb-2">
+                            <label class="inline-flex items-center">
+                                <input type="checkbox" class="form-checkbox h-5 w-5 text-blue-600" checked>
+                                <span class="ml-2 text-gray-700">Political Unrest</span>
+                            </label>
+                        </div>
+                        <div class="mr-4 mb-2">
+                            <label class="inline-flex items-center">
+                                <input type="checkbox" class="form-checkbox h-5 w-5 text-red-600" checked>
+                                <span class="ml-2 text-gray-700">Terrorism Risk</span>
+                            </label>
+                        </div>
+                        <div class="mr-4 mb-2">
+                            <label class="inline-flex items-center">
+                                <input type="checkbox" class="form-checkbox h-5 w-5 text-purple-600" checked>
+                                <span class="ml-2 text-gray-700">Crime Rates</span>
+                            </label>
+                        </div>
+                        <div class="mr-4 mb-2">
+                            <label class="inline-flex items-center">
+                                <input type="checkbox" class="form-checkbox h-5 w-5 text-yellow-600" checked>
+                                <span class="ml-2 text-gray-700">Cyber Threats</span>
+                            </label>
+                        </div>
+                        <div class="mr-4 mb-2">
+                            <label class="inline-flex items-center">
+                                <input type="checkbox" class="form-checkbox h-5 w-5 text-green-600" checked>
+                                <span class="ml-2 text-gray-700">Health Alerts</span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="map-container rounded-lg border border-gray-200 relative">
+                        <!-- Threat markers will be positioned here -->
+                        <div class="threat-marker critical" style="top: 30%; left: 45%;" title="France - Civil Unrest"></div>
+                        <div class="threat-marker high" style="top: 40%; left: 70%;" title="Thailand - Political Tensions"></div>
+                        <div class="threat-marker medium" style="top: 50%; left: 25%;" title="Brazil - Cyber Threats"></div>
+                        <div class="threat-marker low" style="top: 20%; left: 15%;" title="Canada - Safe"></div>
+                        <div class="threat-marker critical" style="top: 35%; left: 60%;" title="Ukraine - Conflict"></div>
+                        <div class="threat-marker high" style="top: 25%; left: 55%;" title="Germany - Terrorism Risk"></div>
+                    </div>
+                    <div class="mt-4 flex justify-between items-center">
+                        <div class="flex items-center">
+                            <div class="h-4 w-4 rounded-full bg-red-500 mr-2"></div>
+                            <span class="text-sm text-gray-600">Critical</span>
+                            <div class="h-4 w-4 rounded-full bg-orange-500 ml-4 mr-2"></div>
+                            <span class="text-sm text-gray-600">High</span>
+                            <div class="h-4 w-4 rounded-full bg-yellow-500 ml-4 mr-2"></div>
+                            <span class="text-sm text-gray-600">Medium</span>
+                            <div class="h-4 w-4 rounded-full bg-green-500 ml-4 mr-2"></div>
+                            <span class="text-sm text-gray-600">Low</span>
+                        </div>
+                        <div>
+                            <button class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium">
+                                Download Regional Report
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Country Security Profiles -->
+    <section id="profiles" class="py-12 bg-white">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="lg:text-center">
+                <h2 class="text-base text-blue-600 font-semibold tracking-wide uppercase">Risk Assessment</h2>
+                <p class="mt-2 text-3xl leading-8 font-extrabold tracking-tight text-gray-900 sm:text-4xl">
+                    Country & City Security Profiles
+                </p>
+                
