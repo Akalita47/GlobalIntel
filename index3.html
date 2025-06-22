@@ -1,1 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GeoPulse - OSINT Geopolitical Analyst Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        #map { height: 100%; }
+        .news-marker {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #ff5e5e;
+            border: 2px solid white;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(255, 82, 82, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(255, 82, 82, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(255, 82, 82, 0); }
+        }
+        .severity-high { background-color: #ff5e5e; }
+        .severity-medium { background-color: #ffbe5e; }
+        .severity-low { background-color: #5ec2ff; }
+        .severity-critical { background-color: #ff2e2e; animation: critical-pulse 1s infinite; }
+        @keyframes critical-pulse {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(255, 46, 46, 0.9); }
+            70% { transform: scale(1); box-shadow: 0 0 0 15px rgba(255, 46, 46, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(255, 46, 46, 0); }
+        }
+        .timeline-item {
+            position: relative;
+            padding-left: 30px;
+            margin-bottom: 20px;
+        }
+        .timeline-item:before {
+            content: '';
+            position: absolute;
+            left: 10px;
+            top: 0;
+            width: 2px;
+            height: 100%;
+            background: #e2e8f0;
+        }
+        .timeline-dot {
+            position: absolute;
+            left: 5px;
+            top: 5px;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #3b82f6;
+        }
+        .news-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+        .sidebar {
+            transition: all 0.3s ease;
+        }
+        .sidebar.collapsed {
+            width: 60px;
+        }
+        .sidebar.collapsed .sidebar-content {
+            opacity: 0;
+            pointer-events: none;
+        }
+        .sidebar-toggle {
+            transition: all 0.3s ease;
+        }
+        .sidebar.collapsed .sidebar-toggle {
+            transform: rotate(180deg);
+        }
+    </style>
+</head>
+<body class="bg-gray-100 font-sans">
+    <div class="flex h-screen overflow-hidden">
+        <!-- Sidebar -->
+        <div class="sidebar bg-gray-800 text-white w-64 flex flex-col">
+            <div class="p-4 flex items-center justify-between border-b border-gray-700">
+                <h1 class="text-xl font-bold sidebar-content">GeoPulse</h1>
+                <button class="sidebar-toggle p-1 rounded-full hover:bg-gray-700">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+            </div>
+            <div class="sidebar-content flex-1 overflow-y-auto p-4">
+                <div class="mb-6">
+                    <h2 class="text-lg font-semibold mb-2">Filters</h2>
+                    <div class="space-y-2">
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Region</label>
+                            <select class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm">
+                                <option>All Regions</option>
+                                <option>Middle East</option>
+                                <option>Europe</option>
+                                <option>Asia-Pacific</option>
+                                <option>Africa</option>
+                                <option>Americas</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Severity</label>
+                            <div class="space-y-1">
+                                <label class="flex items-center">
+                                    <input type="checkbox" class="form-checkbox h-4 w-4 text-red-500" checked>
+                                    <span class="ml-2 text-sm">Critical</span>
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="checkbox" class="form-checkbox h-4 w-4 text-orange-500" checked>
+                                    <span class="ml-2 text-sm">High</span>
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="checkbox" class="form-checkbox h-4 w-4 text-yellow-500" checked>
+                                    <span class="ml-2 text-sm">Medium</span>
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="checkbox" class="form-checkbox h-4 w-4 text-blue-500" checked>
+                                    <span class="ml-2 text-sm">Low</span>
+                                </label>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Time Range</label>
+                            <select class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm">
+                                <option>Last 24 hours</option>
+                                <option>Last week</option>
+                                <option>Last month</option>
+                                <option>Custom range</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Source Type</label>
+                            <div class="space-y-1">
+                                <label class="flex items-center">
+                                    <input type="checkbox" class="form-checkbox h-4 w-4" checked>
+                                    <span class="ml-2 text-sm">News Media</span>
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="checkbox" class="form-checkbox h-4 w-4" checked>
+                                    <span class="ml-2 text-sm">Government</span>
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="checkbox" class="form-checkbox h-4 w-4" checked>
+                                    <span class="ml-2 text-sm">Social Media</span>
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="checkbox" class="form-checkbox h-4 w-4" checked>
+                                    <span class="ml-2 text-sm">Satellite</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <h2 class="text-lg font-semibold mb-2">Analytics</h2>
+                    <div class="grid grid-cols-2 gap-2 mb-4">
+                        <div class="bg-gray-700 p-2 rounded text-center">
+                            <div class="text-xs text-gray-400">Total Events</div>
+                            <div class="text-xl font-bold">247</div>
+                        </div>
+                        <div class="bg-gray-700 p-2 rounded text-center">
+                            <div class="text-xs text-gray-400">Critical</div>
+                            <div class="text-xl font-bold text-red-500">12</div>
+                        </div>
+                    </div>
+                    <div class="h-40 bg-gray-700 rounded flex items-center justify-center">
+                        <span class="text-gray-500">Heatmap Visualization</span>
+                    </div>
+                </div>
+            </div>
+            <div class="p-4 border-t border-gray-700 sidebar-content">
+                <div class="flex items-center space-x-2">
+                    <div class="h-8 w-8 rounded-full bg-gray-600 flex items-center justify-center">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <div>
+                        <div class="text-sm font-medium">Analyst</div>
+                        <div class="text-xs text-gray-400">Geopolitical Team</div>
+                    </div>
+                </div>
+            </div>
+        </div>
 
+        <!-- Main Content -->
+        <div class="flex-1 flex flex-col overflow-hidden">
+            <!-- Top Bar -->
+            <div class="bg-white border-b border-gray-200 p-4 flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <h2 class="text-xl font-semibold">OSINT Geopolitical Dashboard</h2>
+                    <div class="flex space-x-2">
+                        <button class="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm flex items-center">
+                            <i class="fas fa-sync-alt mr-1"></i>
+                            <span>Refresh</span>
+                        </button>
+                        <button class="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm flex items-center">
+                            <i class="fas fa-sliders-h mr-1"></i>
+                            <span>Settings</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-3">
+                    <div class="relative">
+                        <input type="text" placeholder="Search events..." class="pl-8 pr-4 py-1 border border-gray-300 rounded-full text-sm">
+                        <i class="fas fa-search absolute left-3 top-2 text-gray-400"></i>
+                    </div>
+                    <div class="text-sm text-gray-500">
+                        <i class="fas fa-clock mr-1"></i>
+                        <span id="current-time">Loading...</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Area -->
+            <div class="flex-1 flex overflow-hidden">
+                <!-- Map Container -->
+                <div class="flex-1 relative">
+                    <div id="map" class="absolute inset-0"></div>
+                    <div class="absolute bottom-4 left-4 bg-white p-2 rounded shadow-lg z-10">
+                        <div class="flex items-center space-x-2 mb-1">
+                            <div class="w-4 h-4 rounded-full severity-critical"></div>
+                            <span class="text-xs">Critical</span>
+                        </div>
+                        <div class="flex items-center space-x-2 mb-1">
+                            <div class="w-4 h-4 rounded-full severity-high"></div>
+                            <span class="text-xs">High</span>
+                        </div>
+                        <div class="flex items-center space-x-2 mb-1">
+                            <div class="w-4 h-4 rounded-full severity-medium"></div>
+                            <span class="text-xs">Medium</span>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <div class="w-4 h-4 rounded-full severity-low"></div>
+                            <span class="text-xs">Low</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- News Panel -->
+                <div class="w-96 bg-white border-l border-gray-200 flex flex-col">
+                    <div class="p-4 border-b border-gray-200">
+                        <h3 class="font-semibold">Recent Events</h3>
+                    </div>
+                    <div class="flex-1 overflow-y-auto">
+                        <div class="timeline-item p-4 border-b border-gray-200 hover:bg-gray-50 cursor-pointer">
+                            <div class="timeline-dot severity-critical"></div>
+                            <div class="text-sm font-medium">Military buildup reported near Ukraine border</div>
+                            <div class="text-xs text-gray-500 mt-1">CNN • 15 min ago • Moscow, Russia</div>
+                            <div class="text-xs mt-2 text-gray-700">Satellite imagery shows significant movement of Russian troops and equipment near the Ukrainian border, raising concerns...</div>
+                        </div>
+                        <div class="timeline-item p-4 border-b border-gray-200 hover:bg-gray-50 cursor-pointer">
+                            <div class="timeline-dot severity-high"></div>
+                            <div class="text-sm font-medium">Protests erupt in Tehran after economic sanctions</div>
+                            <div class="text-xs text-gray-500 mt-1">Reuters • 42 min ago • Tehran, Iran</div>
+                            <div class="text-xs mt-2 text-gray-700">Thousands gathered in central Tehran protesting rising food prices and economic hardship following new international sanctions...</div>
+                        </div>
+                        <div class="timeline-item p-4 border-b border-gray-200 hover:bg-gray-50 cursor-pointer">
+                            <div class="timeline-dot severity-medium"></div>
+                            <div class="text-sm font-medium">ASEAN summit concludes with trade agreement</div>
+                            <div class="text-xs text-gray-500 mt-1">BBC • 1 hour ago • Jakarta, Indonesia</div>
+                            <div class="text-xs mt-2 text-gray-700">ASEAN members signed a new regional trade pact aimed at reducing tariffs and improving supply chain resilience in the region...</div>
+                        </div>
+                        <div class="timeline-item p-4 border-b border-gray-200 hover:bg-gray-50 cursor-pointer">
+                            <div class="timeline-dot severity-low"></div>
+                            <div class="text-sm font-medium">Diplomatic meeting between US and China officials</div>
+                            <div class="text-xs text-gray-500 mt-1">AP • 2 hours ago • Beijing, China</div>
+                            <div class="text-xs mt-2 text-gray-700">Senior US and Chinese officials met in Beijing to discuss climate cooperation and trade relations amid ongoing tensions...</div>
+                        </div>
+                        <div class="timeline-item p-4 border-b border-gray-200 hover:bg-gray-50 cursor-pointer">
+                            <div class="timeline-dot severity-high"></div>
+                            <div class="text-sm font-medium">Cybersecurity breach in European energy grid</div>
+                            <div class="text-xs text-gray-500 mt-1">DW • 3 hours ago • Berlin, Germany</div>
+                            <div class="text-xs mt-2 text-gray-700">German officials reported a sophisticated cyberattack targeting energy infrastructure across several European countries...</div>
+                        </div>
+                    </div>
+                    <div class="p-4 border-t border-gray-200">
+                        <button class="w-full py-2 bg-blue-600 text-white rounded hover:bg-blue-700 flex items-center justify-center">
+                            <i class="fas fa-plus mr-2"></i>
+                            <span>Create Analysis Report</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Event Detail Modal -->
+    <div id="event-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-lg w-full max-w-2xl max-h-[90vh] overflow-hidden">
+            <div class="p-4 border-b border-gray-200 flex justify-between items-center">
+                <h3 class="text-lg font-semibold">Event Details</h3>
+                <button id="close-modal" class="text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="p-4 overflow-y-auto max-h-[70vh]">
+                <div class="mb-4">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <h4 class="text-xl font-bold">Military Buildup Near Ukraine Border</h4>
+                            <div class="text-sm text-gray-500 mt-1">Moscow, Russia • CNN • 15 min ago</div>
+                        </div>
+                        <span class="px-2 py-1 bg-red-100 text-red-800 rounded-full text-xs font-medium">Critical</span>
+                    </div>
+                </div>
+                <div class="mb-4">
+                    <div class="text-sm text-gray-700">
+                        <p>Satellite imagery analyzed by CNN shows significant movement of Russian troops and equipment near the Ukrainian border, raising concerns about potential escalation. The images, captured yesterday, reveal:</p>
+                        <ul class="list-disc pl-5 mt-2 space-y-1">
+                            <li>Multiple battalion tactical groups repositioned within 50km of the border</li>
+                            <li>Increased artillery and missile systems in forward positions</li>
+                            <li>New field hospitals established in Belgorod region</li>
+                        </ul>
+                        <p class="mt-2">Ukrainian officials have raised the alert level of their border forces, while NATO has called for an emergency meeting to discuss the situation.</p>
+                    </div>
+                </div>
+                <div class="mb-4">
+                    <h5 class="font-semibold mb-2">Source Reliability</h5>
+                    <div class="flex items-center">
+                        <div class="w-full bg-gray-200 rounded-full h-2.5 mr-2">
+                            <div class="bg-green-600 h-2.5 rounded-full" style="width: 85%"></div>
+                        </div>
+                        <span class="text-sm font-medium">85%</span>
+                    </div>
+                    <div class="text-xs text-gray-500 mt-1">High confidence based on multiple corroborating sources</div>
+                </div>
+                <div class="mb-4">
+                    <h5 class="font-semibold mb-2">Potential Impact</h5>
+                    <div class="grid grid-cols-3 gap-2">
+                        <div class="bg-red-50 p-2 rounded text-center">
+                            <div class="text-xs text-red-600">Military</div>
+                            <div class="text-sm font-bold text-red-800">High</div>
+                        </div>
+                        <div class="bg-orange-50 p-2 rounded text-center">
+                            <div class="text-xs text-orange-600">Economic</div>
+                            <div class="text-sm font-bold text-orange-800">Medium</div>
+                        </div>
+                        <div class="bg-yellow-50 p-2 rounded text-center">
+                            <div class="text-xs text-yellow-600">Diplomatic</div>
+                            <div class="text-sm font-bold text-yellow-800">High</div>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <h5 class="font-semibold mb-2">Related Events</h5>
+                    <div class="space-y-2">
+                        <div class="p-2 bg-gray-50 rounded text-sm">
+                            <div class="font-medium">Russian Foreign Ministry statement on Ukraine</div>
+                            <div class="text-xs text-gray-500">2 hours ago • TASS</div>
+                        </div>
+                        <div class="p-2 bg-gray-50 rounded text-sm">
+                            <div class="font-medium">NATO increases Black Sea patrols</div>
+                            <div class="text-xs text-gray-500">4 hours ago • Reuters</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="p-4 border-t border-gray-200 flex justify-end space-x-2">
+                <button class="px-4 py-2 border border-gray-300 rounded hover:bg-gray-100">
+                    <i class="fas fa-bookmark mr-1"></i>
+                    <span>Save</span>
+                </button>
+                <button class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+                    <i class="fas fa-chart-line mr-1"></i>
+                    <span>Analyze</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize map
+        const map = L.map('map').setView([30, 0], 2);
+       
+        // Add tile layer
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+
+        // Add sample markers with different severities
+        const addMarker = (lat, lng, severity) => {
+            const marker = L.marker([lat, lng], {
+                icon: L.divIcon({
+                    className: '',
+                    html: `<div class="news-marker ${severity}"></div>`,
+                    iconSize: [20, 20]
+                })
+            }).addTo(map);
+           
+            marker.on('click', () => {
+                document.getElementById('event-modal').classList.remove('hidden');
+            });
+        };
+
+        // Critical events
+        addMarker(55.7558, 37.6176, 'severity-critical'); // Moscow
+        addMarker(35.6895, 51.3890, 'severity-critical'); // Tehran
+       
+        // High severity events
+        addMarker(52.5200, 13.4050, 'severity-high'); // Berlin
+        addMarker(24.7136, 46.6753, 'severity-high'); // Riyadh
+       
+        // Medium severity events
+        addMarker(-6.2088, 106.8456, 'severity-medium'); // Jakarta
+        addMarker(19.4326, -99.1332, 'severity-medium'); // Mexico City
+       
+        // Low severity events
+        addMarker(39.9042, 116.4074, 'severity-low'); // Beijing
+        addMarker(38.9072, -77.0369, 'severity-low'); // Washington DC
+
+        // Simulate new events popping up
+        setInterval(() => {
+            const lat = 20 + Math.random() * 50;
+            const lng = -100 + Math.random() * 200;
+            const severities = ['severity-critical', 'severity-high', 'severity-medium', 'severity-low'];
+            const severity = severities[Math.floor(Math.random() * severities.length)];
+            addMarker(lat, lng, severity);
+        }, 10000);
+
+        // Update current time
+        const updateTime = () => {
+            const now = new Date();
+            document.getElementById('current-time').textContent = now.toLocaleTimeString() + ' ' + now.toLocaleDateString();
+        };
+        setInterval(updateTime, 1000);
+        updateTime();
+
+        // Toggle sidebar
+        document.querySelector('.sidebar-toggle').addEventListener('click', () => {
+            document.querySelector('.sidebar').classList.toggle('collapsed');
+        });
+
+        // Close modal
+        document.getElementById('close-modal').addEventListener('click', () => {
+            document.getElementById('event-modal').classList.add('hidden');
+        });
+
+        // Simulate clicking on timeline items to show modal
+        document.querySelectorAll('.timeline-item').forEach(item => {
+            item.addEventListener('click', () => {
+                document.getElementById('event-modal').classList.remove('hidden');
+            });
+        });
+    </script>
+</body>
+</html>
