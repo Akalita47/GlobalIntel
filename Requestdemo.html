@@ -1,1 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Request a Demo | Global Intel Desk</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      margin: 0;
+      padding: 0;
+      background: linear-gradient(to right, #0f2027, #203a43, #2c5364);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+    .container {
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(8px);
+      padding: 2rem 3rem;
+      border-radius: 20px;
+      box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+      max-width: 500px;
+      width: 100%;
+    }
+    h1 {
+      font-size: 2rem;
+      margin-bottom: 0.5rem;
+      text-align: center;
+    }
+    p {
+      font-size: 1rem;
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+    form {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+    input, textarea {
+      padding: 0.75rem;
+      border: none;
+      border-radius: 10px;
+      font-size: 1rem;
+    }
+    textarea {
+      resize: vertical;
+    }
+    button {
+      padding: 0.75rem;
+      border: none;
+      border-radius: 10px;
+      background: #00c9ff;
+      color: #000;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+    button:hover {
+      background: #92fe9d;
+    }
+    .trust-indicators {
+      margin-top: 2rem;
+      font-size: 0.9rem;
+      text-align: center;
+      color: #ccc;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Request Demo</h1>
+    <p>Experience the power of real-time OSINT & AI-driven intelligence. Book your demo today.</p>
+    <form id="demo-form">
+      <input type="text" placeholder="Full Name" required />
+      <input type="text" placeholder="Company / Organization" />
+      <input type="email" placeholder="Email Address" required />
+      <input type="text" placeholder="Phone Number (optional)" />
+      <input type="text" placeholder="Job Title / Role" />
+      <input type="date" placeholder="Preferred Date" />
+      <textarea rows="4" placeholder="Tell us what you're looking for... (optional)"></textarea>
+      <button type="submit">Book My Demo</button>
+    </form>
+    <div class="trust-indicators">
+      ✔ Trusted by global analysts<br>
+      ✔ AI-powered real-time monitoring<br>
+      ✔ GDPR Compliant
+    </div>
+  </div>
+
+  <script>
+    document.getElementById('demo-form').addEventListener('submit', function(e) {
+      e.preventDefault();
+      alert('Thank you! Our team will contact you shortly to schedule your demo.');
+      this.reset();
+    });
+  </script>
+</body>
+</html>
 
